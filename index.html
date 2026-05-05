@@ -2,804 +2,1755 @@
 <html lang="ru">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Я рядом, любимая ❤️</title>
-    <style>
-        /* --- Стили --- */
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #121212;
-            color: #e0e0e0;
-            font-family: 'Segoe UI', sans-serif;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Я рядом, любимая ❤️</title>
 
-        /* Размытие фона */
-        .blurred {
-            filter: blur(8px);
-            pointer-events: none;
-            transition: filter 0.3s ease;
-        }
+  <style>
+    /* --- ОСНОВНЫЕ СТИЛИ --- */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #121212;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-        /* Верхние кнопки */
-        .top-controls {
-            position: sticky;
-            top: 0;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            padding: 15px 20px;
-            box-sizing: border-box;
-            z-index: 100;
-            pointer-events: auto;
-            background: linear-gradient(to bottom, #121212 10%, transparent);
-            backdrop-filter: blur(2px);
-            transition: transform 0.3s ease-in-out;
-        }
+    /* СЛОЙ ДЕРЕВА (ФОН - СТВОЛ И ВЕТКИ) */
+    #treeCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: auto;
+      opacity: 0.8;
+      transition: opacity 0.5s ease;
+    }
 
-        .top-controls.hidden-nav {
-            transform: translateY(-100%);
-        }
+    /* СЛОЙ ДЛЯ ПАДАЮЩИХ ЭЛЕМЕНТОВ И СУГРОБА */
+    #frontCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 51;
+      /* ВЫШЕ ТАЙМЕРА (50), НИЖЕ КАРТОЧКИ (70) */
+      pointer-events: none;
+    }
 
-        .corner-btn {
-            background: rgba(30, 30, 30, 0.8);
-            border: 1px solid #444;
-            color: #fff;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            font-size: 18px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(5px);
-        }
+    .ui-hidden .top-controls,
+    .ui-hidden .main-container,
+    .ui-hidden .timer-box {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
 
-        @keyframes heartbeat {
-            0% {
-                transform: scale(1);
-            }
+    .silent-header {
+      position: fixed;
+      top: 150px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 15px;
+      color: rgba(255, 255, 255, 0.2);
+      font-style: italic;
+      letter-spacing: 1px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s ease;
+      z-index: 5;
+      text-transform: lowercase;
+    }
 
-            15% {
-                transform: scale(1.3);
-            }
+    .silent-block {
+      position: fixed;
+      top: 25%;
+      transform: none;
+      width: 45%;
+      font-size: 15px;
+      color: rgba(255, 255, 255, 0.15);
+      font-style: italic;
+      letter-spacing: 1px;
+      line-height: 1.4;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s ease;
+      z-index: 5;
+      text-transform: lowercase;
+      text-align: center;
+      vertical-align: top
+    }
 
-            30% {
-                transform: scale(1);
-            }
+    .silent-left {
+      left: 0;
+      padding-left: 20px;
+      text-align: left;
+    }
 
-            45% {
-                transform: scale(1.15);
-            }
+    .silent-right {
+      right: 0;
+      padding-right: 20px;
+      text-align: right;
+    }
 
-            60% {
-                transform: scale(1);
-            }
-        }
+    .ui-hidden .silent-header,
+    .ui-hidden .silent-block {
+      opacity: 1;
+    }
 
-        .heart-btn.beating {
-            animation: heartbeat 1.2s infinite;
-            color: #ff4d4d;
-            border-color: #ff4d4d;
-        }
+    .text-faded .silent-header,
+    .text-faded .silent-block {
+      opacity: 0 !important;
+    }
 
-        /* Контент */
-        .main-container {
-            width: 90%;
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 20px 20px 80px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+    .blurred {
+      filter: blur(8px);
+      pointer-events: none;
+      transition: filter 0.3s ease;
+    }
 
-        h1 {
-            font-weight: 300;
-            font-size: 1.5rem;
-            opacity: 0.9;
-            margin-bottom: 20px;
-            text-align: center;
-        }
+    .top-controls {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      padding: 15px 20px;
+      box-sizing: border-box;
+      z-index: 100;
+      pointer-events: auto;
+      background: linear-gradient(to bottom, rgba(18, 18, 18, 0.8) 0%, transparent 100%);
+      transition: opacity 0.5s ease;
+    }
 
-        /* Карточка дня */
-        .daily-card {
-            background: linear-gradient(145deg, #1e1e1e, #252525);
-            border: 1px solid #333;
-            border-radius: 20px;
-            padding: 25px 20px;
-            width: 100%;
-            box-sizing: border-box;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            margin-bottom: 20px;
-            text-align: center;
-        }
+    .left-buttons {
+      display: flex;
+      gap: 10px;
+    }
 
-        .card-date {
-            font-size: 11px;
-            color: #888;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-        }
+    .corner-btn {
+      background: rgba(40, 40, 40, 0.6);
+      border: 1px solid #555;
+      color: #fff;
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+      padding: 0;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
 
-        .card-content {
-            font-size: 18px;
-            line-height: 1.5;
-            font-style: italic;
-            min-height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    @keyframes heartbeat {
+      0% {
+        transform: scale(1);
+      }
 
-        .card-img {
-            max-width: 100%;
-            border-radius: 10px;
-            margin-bottom: 10px;
-        }
+      15% {
+        transform: scale(1.3);
+      }
 
-        .refresh-timer {
-            font-size: 11px;
-            color: #555;
-            margin-top: 15px;
-        }
+      30% {
+        transform: scale(1);
+      }
 
-        /* Блок быстрого сообщения */
-        #quickMsgArea {
-            width: 100%;
-            min-height: 60px;
-            margin-bottom: 20px;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+      45% {
+        transform: scale(1.15);
+      }
 
-        .quick-msg-text {
-            font-size: 18px;
-            color: #fff;
-            font-style: italic;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: opacity 0.5s ease, transform 0.5s ease;
-        }
+      60% {
+        transform: scale(1);
+      }
+    }
 
-        .quick-msg-text.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    .heart-btn.beating {
+      animation: heartbeat 1.2s infinite;
+      color: #ff4d4d;
+      border-color: #ff4d4d;
+    }
 
-        /* Кнопки действий */
-        .menu-grid {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            width: 100%;
-        }
+    .main-container {
+      position: relative;
+      width: 90%;
+      max-width: 500px;
+      margin: 0 auto;
+      padding-top: 80px;
+      padding-bottom: 80px;
+      padding-left: 20px;
+      padding-right: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: opacity 0.5s ease;
+    }
 
-        .btn-action {
-            background: transparent;
-            border: 1px solid #444;
-            color: #ccc;
-            padding: 15px 5px;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: 0.2s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 120px;
-            min-width: 120px;
-        }
+    h1 {
+      font-weight: 300;
+      font-size: 1.5rem;
+      opacity: 0.95;
+      margin-bottom: 20px;
+      text-align: center;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+    }
 
-        .btn-action:active {
-            transform: scale(0.98);
-            background: #222;
-        }
+    /* --- ВАЖНОЕ ИЗМЕНЕНИЕ ЗДЕСЬ --- */
+    .daily-card {
+      position: relative;
+      /* ОБЯЗАТЕЛЬНО для работы z-index */
+      z-index: 70;
+      /* ТЕПЕРЬ ОНА ВЫШЕ ЛИСТЬЕВ (60) */
+      background: rgba(30, 30, 30, 0.75);
+      backdrop-filter: blur(2px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 25px 20px;
+      width: 100%;
+      box-sizing: border-box;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      margin-bottom: 20px;
+      text-align: center;
+    }
 
-        .btn-icon {
-            font-size: 20px;
-            margin-bottom: 5px;
-        }
+    .card-date {
+      font-size: 11px;
+      color: #bbb;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
 
-        /* Таймер внизу */
-        .timer-box {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: #1a1a1a;
-            border-top: 1px solid #333;
-            padding: 15px 0;
-            text-align: center;
-            font-size: 14px;
-            color: #aaa;
-            z-index: 50;
-        }
+    .card-content {
+      font-size: 18px;
+      line-height: 1.5;
+      font-style: italic;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    }
 
-        .timer-val {
-            color: #fff;
-            font-weight: bold;
-            font-size: 18px;
-            display: block;
-            margin-top: 5px;
-        }
+    .refresh-timer {
+      font-size: 11px;
+      color: #888;
+      margin-top: 15px;
+    }
 
-        /* ЭКРАН НАСТРОЙКИ */
-        #setupScreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #121212;
-            z-index: 200;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            box-sizing: border-box;
-        }
+    #quickMsgArea {
+      width: 100%;
+      min-height: 60px;
+      margin-bottom: 20px;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* У этого блока нет z-index, он ниже frontCanvas (60) */
+    }
 
-        .input-group {
-            margin-bottom: 20px;
-            width: 100%;
-            max-width: 300px;
-        }
+    .quick-msg-text {
+      font-size: 18px;
+      color: #fff;
+      font-style: italic;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    }
 
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #888;
-            font-size: 14px;
-        }
+    .quick-msg-text.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
 
-        input[type="date"],
-        input[type="number"] {
-            width: 100%;
-            padding: 12px;
-            background: #222;
-            border: 1px solid #444;
-            color: white;
-            border-radius: 8px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
+    .menu-grid {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      width: 100%;
+      /* Кнопки тоже ниже frontCanvas (60), листья падают ПОВЕРХ них */
+    }
 
-        .start-btn {
-            background: #ff4d4d;
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            border-radius: 30px;
-            font-size: 18px;
-            cursor: pointer;
-            margin-top: 20px;
-            box-shadow: 0 4px 15px rgba(255, 77, 77, 0.3);
-        }
+    .btn-action {
+      background: rgba(30, 30, 30, 0.6);
+      backdrop-filter: blur(2px);
+      border: 1px solid #444;
+      color: #ccc;
+      padding: 10px 5px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 134px;
+      min-width: 134px;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-        /* ОБЩИЕ СТИЛИ МОДАЛОК */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 300;
-            backdrop-filter: blur(2px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-        }
+    .btn-action:active {
+      transform: scale(0.96);
+      background: rgba(50, 50, 50, 0.8);
+    }
 
-        .modal-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
+    .btn-icon {
+      font-size: 20px;
+      margin-bottom: 5px;
+    }
 
-        .modal-box {
-            background: #222;
-            padding: 30px;
-            border-radius: 20px;
-            width: 85%;
-            max-width: 350px;
-            border: 1px solid #444;
-            text-align: center;
-        }
+    .timer-box {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(18, 18, 18, 0.85);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid #333;
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
+      padding-top: 15px;
+      text-align: center;
+      font-size: 14px;
+      color: #aaa;
+      z-index: 50;
+      transition: opacity 0.5s ease;
+    }
 
-        .settings-title {
-            font-size: 18px;
-            margin-bottom: 20px;
-            color: #fff;
-            border-bottom: 1px solid #444;
-            padding-bottom: 10px;
-        }
+    .timer-val {
+      color: #fff;
+      font-weight: bold;
+      font-size: 18px;
+      display: block;
+      margin-top: 5px;
+    }
 
-        .btn-setting {
-            width: 100%;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 12px;
-            border: none;
-            cursor: pointer;
-            font-size: 15px;
-            transition: 0.2s;
-        }
+    /* --- МОДАЛКИ И НАСТРОЙКИ --- */
+    #setupScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #121212;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
 
-        .btn-primary {
-            background: #333;
-            color: white;
-        }
+    .setup-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
 
-        .btn-primary:hover {
-            background: #444;
-        }
+    .setup-header h1 {
+      color: #ff4d4d;
+      margin: 0 0 10px 0;
+      font-size: 1.8rem;
+    }
 
-        .btn-danger {
-            background: #5c1818;
-            color: #ff6b6b;
-        }
+    .setup-header p {
+      color: #888;
+      font-size: 14px;
+      margin: 0;
+    }
 
-        .btn-close {
-            background: #ff4d4d;
-            color: white;
-            margin-top: 10px;
-        }
+    .date-picker-wrapper {
+      width: 100%;
+      max-width: 300px;
+      padding: 10px 0;
+      margin-bottom: 20px;
+      position: relative;
+    }
 
-        /* ИНФО МОДАЛКА */
-        #infoModal .modal-box {
-            text-align: left;
-            max-height: 70%;
-            overflow-y: auto;
-        }
+    .picker-label {
+      text-align: center;
+      color: #666;
+      font-size: 12px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
 
-        .close-info {
-            margin-top: 20px;
-            background: #333;
-            border: none;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 15px;
-            width: 100%;
-            cursor: pointer;
-        }
-    </style>
+    .drum-container {
+      display: flex;
+      height: 150px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .highlight-bar {
+      position: absolute;
+      top: 57%;
+      left: 0;
+      width: 100%;
+      height: 30px;
+      transform: translateY(-50%);
+      background: rgba(255, 77, 77, 0.05);
+      border-top: 1px solid rgba(255, 77, 77, 0.15);
+      border-bottom: 1px solid rgba(255, 77, 77, 0.15);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .drum-column {
+      flex: 1;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      position: relative;
+      z-index: 2;
+      mask-image: linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%);
+    }
+
+    .drum-column::-webkit-scrollbar {
+      display: none;
+    }
+
+    .col-day {
+      border-right: 1px solid #222;
+    }
+
+    .col-month {
+      border-right: 1px solid #222;
+    }
+
+    .drum-item {
+      height: 30px;
+      line-height: 30px;
+      font-size: 18px;
+      color: #555;
+      text-align: center;
+      scroll-snap-align: center;
+      scroll-snap-stop: always;
+      cursor: pointer;
+      transition: color 0.2s, transform 0.2s;
+    }
+
+    .drum-item.active {
+      color: #fff;
+      font-weight: 600;
+      transform: scale(1.1);
+    }
+
+    .start-btn {
+      background: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      border-radius: 30px;
+      font-size: 18px;
+      cursor: pointer;
+      margin-top: 10px;
+      box-shadow: 0 4px 15px rgba(255, 77, 77, 0.3);
+      transition: transform 0.2s;
+    }
+
+    .start-btn:active {
+      transform: scale(0.95);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 300;
+      backdrop-filter: blur(4px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-box {
+      background: #222;
+      padding: 30px;
+      border-radius: 20px;
+      width: 85%;
+      max-width: 350px;
+      border: 1px solid #444;
+      text-align: center;
+    }
+
+    .settings-title {
+      font-size: 18px;
+      margin-bottom: 20px;
+      color: #fff;
+      border-bottom: 1px solid #444;
+      padding-bottom: 10px;
+    }
+
+    .btn-setting {
+      width: 100%;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+      transition: 0.2s;
+    }
+
+    .btn-primary {
+      background: #333;
+      color: white;
+    }
+
+    .btn-danger {
+      background: #5c1818;
+      color: #ff6b6b;
+    }
+
+    .btn-close {
+      background: #ff4d4d;
+      color: white;
+      margin-top: 10px;
+    }
+
+    .system-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .sys-box {
+      background: #2a2a2a;
+      border: 1px solid #333;
+      border-radius: 15px;
+      padding: 15px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      height: 140px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .sys-box-title {
+      font-size: 14px;
+      color: #aaa;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .sys-box-content {
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      margin: 5px 0;
+    }
+
+    .sys-input-mini {
+      width: 80%;
+      background: #121212;
+      border: 1px solid #444;
+      color: white;
+      text-align: center;
+      padding: 8px 0;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    .sys-btn-mini {
+      width: 100%;
+      padding: 10px 0;
+      border-radius: 10px;
+      border: none;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-mini-primary {
+      background: #333;
+      color: white;
+    }
+
+    .btn-mini-danger {
+      background: #5c1818;
+      color: #ff6b6b;
+    }
+
+    #infoModal .modal-box {
+      text-align: left;
+      max-height: 70%;
+      overflow-y: auto;
+    }
+
+    .close-info {
+      margin-top: 20px;
+      background: #333;
+      border: none;
+      color: white;
+      padding: 8px 20px;
+      border-radius: 15px;
+      width: 100%;
+      cursor: pointer;
+    }
+  </style>
 </head>
 
 <body>
 
-    <audio id="heartAudio" loop>
-        <source src="heart.mp3" type="audio/mpeg">
-    </audio>
+  <!-- ФОНОВАЯ МУЗЫКА -->
+  <audio id="bgMusic">
+    <source src="music1.mp3" type="audio/mpeg">
+    <source src="music2.mp3" type="audio/mpeg">
+    <source src="music3.mp3" type="audio/mpeg">
+  </audio>
 
-    <!-- Верхние кнопки -->
-    <div class="top-controls" id="topNav">
-        <button onclick="openSettings()" class="corner-btn">⚙️</button>
-        <button id="heartBtn" class="corner-btn">❤️</button>
+  <!-- ХОЛСТ ДЛЯ ДЕРЕВА (ФОН) -->
+  <canvas id="treeCanvas"></canvas>
+
+  <!-- ХОЛСТ ДЛЯ ПЕРЕДНЕГО ПЛАНА (ЛИСТЬЯ/СНЕГ) -->
+  <canvas id="frontCanvas"></canvas>
+
+  <div class="silent-header">это дерево - показатель нашей любви</div>
+  <div class="silent-block silent-left">частица сакуры - её красота и искренность</div>
+  <div class="silent-block silent-right">частица дуба - её крепость и долговечность</div>
+
+  <audio id="heartAudio" loop>
+    <source src="heart.mp3" type="audio/mpeg">
+  </audio>
+
+  <div class="top-controls" id="topNav">
+    <div class="left-buttons">
+      <button onclick="openSettings()" class="corner-btn">⚙️</button>
+      <button onclick="toggleInterface(event)" class="corner-btn">👁️</button>
+    </div>
+    <button id="heartBtn" class="corner-btn">❤️</button>
+  </div>
+
+  <div id="appContent" class="main-container">
+    <h1 id="greetingText">Загрузка...</h1>
+
+    <!-- Карточка (z-index: 70) теперь выше листьев (z-index: 60) -->
+    <div class="daily-card">
+      <div class="card-date" id="cardDateLabel">ДЕНЬ СЛУЖБЫ: --</div>
+      <div id="cardBody" class="card-content">Загрузка...</div>
+      <div class="refresh-timer" id="nextUpdateTimer">Обновление через: --:--:--</div>
     </div>
 
-    <!-- Основной контент -->
-    <div id="appContent" class="main-container">
-        <h1 id="greetingText">Загрузка...</h1>
-
-        <!-- Карточка дня -->
-        <div class="daily-card">
-            <div class="card-date" id="cardDateLabel">ДЕНЬ СЛУЖБЫ: --</div>
-            <div id="cardBody" class="card-content">Загрузка...</div>
-            <div class="refresh-timer" id="nextUpdateTimer">Обновление через: --:--:--</div>
-        </div>
-
-        <!-- ЗОНА БЫСТРОГО СООБЩЕНИЯ -->
-        <div id="quickMsgArea">
-            <div id="quickMsgText" class="quick-msg-text"></div>
-        </div>
-
-        <!-- Кнопки действий -->
-        <div class="menu-grid">
-            <button onclick="showQuickMsg('love')" class="btn-action"><span class="btn-icon">💌</span>Любовь</button>
-            <button onclick="showQuickMsg('support')" class="btn-action"><span
-                    class="btn-icon">🤝</span>Поддержка</button>
-            <button onclick="showQuickMsg('pleasant')" class="btn-action"><span
-                    class="btn-icon">✨</span>Приятное</button>
-            <button onclick="showQuickMsg('morning')" class="btn-action"><span class="btn-icon">☀️</span>Утро</button>
-            <button onclick="showQuickMsg('night')" class="btn-action"><span class="btn-icon">🌙</span>Ночь</button>
-        </div>
+    <div id="quickMsgArea">
+      <div id="quickMsgText" class="quick-msg-text"></div>
     </div>
 
-    <!-- Таймер до дома -->
-    <div class="timer-box">
-        До встречи осталось:
-        <span id="countdown" class="timer-val">Загрузка...</span>
+    <!-- Кнопки (z-index: auto) ниже листьев (z-index: 60) -->
+    <div class="menu-grid">
+      <button onclick="showQuickMsg('love')" class="btn-action"><span class="btn-icon">💌</span>Любовь</button>
+      <button onclick="showQuickMsg('support')" class="btn-action"><span class="btn-icon">🤝</span>Поддержка</button>
+      <button onclick="showQuickMsg('morning')" class="btn-action"><span class="btn-icon">☀️</span>Утро</button>
+      <button onclick="showQuickMsg('night')" class="btn-action"><span class="btn-icon">🌙</span>Ночь</button>
+      <button onclick="showQuickMsg('pleasant')" class="btn-action"><span class="btn-icon">✨</span>Приятное</button>
     </div>
+  </div>
 
-    <!-- ЭКРАН ПЕРВИЧНОЙ НАСТРОЙКИ -->
-    <div id="setupScreen">
-        <h1 style="color: #ff4d4d;">Начало пути</h1>
-        <p style="text-align:center; color:#888; margin-bottom:30px;">Укажи даты моей службы.</p>
-        <div class="input-group">
-            <label>Дата начала:</label>
-            <input type="date" id="startDateInput">
-        </div>
-        <div class="input-group">
-            <label>Дата возвращения:</label>
-            <input type="date" id="endDateInput">
-        </div>
-        <button onclick="saveDatesAndStart()" class="start-btn">Начать службу</button>
+  <div class="timer-box">
+    До встречи осталось:
+    <span id="countdown" class="timer-val">Загрузка...</span>
+  </div>
+
+  <!-- ЭКРАН НАСТРОЙКИ -->
+  <div id="setupScreen">
+    <div class="setup-header">
+      <h1>Начало пути</h1>
+      <p>Выбери даты моей службы</p>
     </div>
-
-    <!-- ГЛАВНОЕ МЕНЮ НАСТРОЕК -->
-    <div id="settingsModal" class="modal-overlay">
-        <div class="modal-box">
-            <div class="settings-title">Меню</div>
-
-            <button onclick="openInfoFromSettings()" class="btn-setting btn-primary">ℹ️ Инструкция</button>
-            <button onclick="openSystemMenu()" class="btn-setting btn-primary">⚙️ Система</button>
-
-            <button onclick="closeSettings()" class="btn-setting btn-close">Закрыть</button>
-        </div>
+    <div class="date-picker-wrapper">
+      <div class="picker-label">Дата начала</div>
+      <div class="highlight-bar"></div>
+      <div class="drum-container" id="startPicker">
+        <div class="drum-column col-day" id="startDayCol"></div>
+        <div class="drum-column col-month" id="startMonthCol"></div>
+        <div class="drum-column col-year" id="startYearCol"></div>
+      </div>
     </div>
-
-    <!-- ПОДМЕНЮ СИСТЕМЫ -->
-    <div id="systemModal" class="modal-overlay" style="z-index: 310;">
-        <div class="modal-box">
-            <div class="settings-title">Система</div>
-
-            <div style="margin-bottom: 20px; text-align: left;">
-                <label style="font-size:12px; color:#888;">🧪 Сдвиг дней (Тест):</label>
-                <input type="number" id="debugOffset" value="0" onchange="updateDebugMode()" style="margin-top:5px;">
-            </div>
-
-            <button onclick="resetDates()" class="btn-setting btn-danger">🔄 Сбросить даты</button>
-            <button onclick="closeSystemMenu()" class="btn-setting btn-close">Назад</button>
-        </div>
+    <div class="date-picker-wrapper">
+      <div class="picker-label">Дата возвращения</div>
+      <div class="highlight-bar"></div>
+      <div class="drum-container" id="endPicker">
+        <div class="drum-column col-day" id="endDayCol"></div>
+        <div class="drum-column col-month" id="endMonthCol"></div>
+        <div class="drum-column col-year" id="endYearCol"></div>
+      </div>
     </div>
+    <button onclick="saveDatesAndStart()" class="start-btn">Начать службу</button>
+  </div>
 
-    <!-- ИНФО МОДАЛКА -->
-    <div id="infoModal" class="modal-overlay" style="z-index: 320;">
-        <div class="modal-box">
-            <h2 style="margin-top:0; color:#ff4d4d;">Памятка</h2>
-            <p style="line-height: 1.6; font-size: 14px;">
-                Привет любимая!<br><br>
-                1. <b>Карточка дня</b> обновляется каждое утро.<br><br>
-                2. Если грустно — жми на кнопки ниже карточки, текст появится прямо там.<br><br>
-                3. Сердечко сверху справа — звук моего сердечка<br><br>
-                4. Если что-то не так с датами или ты ошиблась при вводе, то нажми на сброс даты в системе.<br><br>
-                Я люблю тебя.
-            </p>
-            <button class="close-info" onclick="closeInfo()">Понятно</button>
-        </div>
+  <!-- МЕНЮ -->
+  <div id="settingsModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="settings-title">Меню</div>
+      <button onclick="openInfoFromSettings()" class="btn-setting btn-primary">ℹ️ Памятка</button>
+      <button onclick="openSystemMenu()" class="btn-setting btn-primary">⚙️ Система</button>
+      <button onclick="closeSettings()" class="btn-setting btn-close">Закрыть</button>
     </div>
+  </div>
 
-    <script>
+  <div id="systemModal" class="modal-overlay" style="z-index: 310;">
+    <div class="modal-box">
+      <div class="settings-title">Система</div>
+      <div class="system-grid">
+        <div class="sys-box">
+          <div class="sys-box-title">Время (дни)</div>
+          <div class="sys-box-content">
+            <input type="number" id="debugOffset" value="0" onchange="updateDebugMode()" class="sys-input-mini">
+          </div>
+          <button onclick="updateDebugMode()" class="sys-btn-mini btn-mini-primary">Применить</button>
+        </div>
+        <div class="sys-box">
+          <div class="sys-box-title">Сброс</div>
+          <div class="sys-box-content"></div>
+          <button onclick="resetDates()" class="sys-btn-mini btn-mini-danger">RESET</button>
+        </div>
+      </div>
 
-        // --- РАЗНООБРАЗНЫЕ ПРИВЕТСТВИЯ ---           
-        const greetings = [
-            "Привет, зайка ❤️",
-            "Как дела солнышко",
-            "Люблю тебя бесконечно сильно 💞",
-            "Привет, моя хорошая😍",
-            "Я очень скучаю(",
-            "Ты самое дорогое золотце",
-            "Обнимаю крепко-крепко🤗",
-            "Привет, солнышо❤️",
-            "Ты лучшее что случалось в моей жизни",
-            "Люблю тебя зайка😘",
-            "Хорошего тебе дня любимая",
-            "Сколько там осталось?",
-            "Ты безумно красивая😽"
-        ];
+      <!-- ТЕСТ СЕЗОНА -->
+      <div class="sys-box" style="height: auto; margin-bottom: 15px;">
+        <div class="sys-box-title">Тест сезона (ГГГГ-ММ-ДД)</div>
+        <div class="sys-box-content">
+          <input type="text" id="testSeasonDate" placeholder="Напр: 2026-04-25" class="sys-input-mini">
+        </div>
+        <button onclick="applyTestSeason()" class="sys-btn-mini btn-mini-primary">Установить дату</button>
+      </div>
 
-        // --- 32 ФРАЗЫ ДЛЯ КАРТОЧКИ ДНЯ ---
-        const dailyContent = [
-            { type: 'text', content: "Ты самая лучшая девушка на свете <3" },
-            { type: 'text', content: "Безумно сильно люблю тебя и скучаю, солнышко!" },
-            { type: 'text', content: "Ты безумно красивая, солнышко, твоя улыбка, глаза, божеее... Я тону в твоей красоте" },
-            { type: 'text', content: "Поскорее бы увидеть тебя и обнять(" },
-            { type: 'text', content: "Мне тебя безумно не хватает..." },
-            { type: 'text', content: "Не проходит ни дня без мысли о тебе" },
-            { type: 'text', content: "Каждое мгновенье я вижу тебя рядом с собой" },
-            { type: 'text', content: "Один день без тебя - самый унылый день в жизни" },
-            { type: 'text', content: "Ты делаешь меня счастливым моя любименькая)" },
-            { type: 'text', content: "Жду не дождусь нашей встречи, зайка" },
-            { type: 'text', content: "Хорошо ли проходят твои дни, солнце? Я скучаю ,_," },
-            { type: 'text', content: "Вот бы снова посмотреть с тобой фильм вечером после тяжелого дня" },
-            { type: 'text', content: "Всё бы отдал лишь бы обнять тебя вновь" },
-            { type: 'text', content: "С каждым днём мы всё ближе к друг другу, любимая <3" },
-            { type: 'text', content: "Всё обязательно будет хорошо солнышко" },
-            { type: 'text', content: "А я тебя люблю очень сильно)" },
-            { type: 'text', content: "Когда я называю тебя 'солнцем' я говорю это всерьёз, для меня ты самое яркое солнышко" },
-            { type: 'text', content: "Вспоминая о времени проведённым с тобой, я невольно улыбаюсь)" },
-            { type: 'text', content: "Спасибо за каждый миг что ты со мной любименькая <3" },
-            { type: 'text', content: "Я безумно рад тому что именно ты моя девушка" },
-            { type: 'text', content: "У тебя обязательно всё получиться, чтобы ты не задумала" },
-            { type: 'text', content: "Береги себя и не забрасывай своё здоровье, и ещё кушай хорошо, люблю тебя" },
-            { type: 'text', content: "Мне не хватает наших совместных вечеров любимая ,_," },
-            { type: 'text', content: "Ты единственная и невероятная для меня" },
-            { type: 'text', content: "Если бы у меня были 1000 жизней, каждую из них я бы выбрал провести с тобой" },
-            { type: 'text', content: "Ты моё самое дорогое счастье!" },
-            { type: 'text', content: "Хотелось бы скинуть тебе пару десятков тик токов о том как сильно я тебя люблю (┬┬﹏┬┬)" },
-            { type: 'text', content: "Влюбиться в тебя было лучшей случайностью в моей жизни" },
-            { type: 'text', content: "С тобой я чувствую себя по-настоящему живым" },
-            { type: 'text', content: "Моё сердце бьётся чаще при виде тебя" },
-            { type: 'text', content: "Я всегда за тебя моя маленькая, всегда поддержу и буду рядом, солнышко" },
-            { type: 'text', content: "Ты моя принцесса, самое дорогое золотце моё, Безумно сильно тебя люблю" }
-        ];
+      <button onclick="closeSystemMenu()" class="btn-setting btn-close">Назад</button>
+    </div>
+  </div>
 
-        const quickMsgs = {
-            support: ["У тебя обязательно всё получиться зайка", "Я всегда в тебя верю любимая", "Ты умничка", "Умничка моя", "Всё что задумала сбудется", "Молодчинка", "Я горжусь тобой, солнышко", "Ты у меня такая сильная", "Не переживай сильно, всё плохое пройдёт и наступет свет", "Если что-то не получается сейчас, попробуй чуть позже", "Я рядом, любимая, хоть и не физически", "Я знаю что ты у меня самая умненькая и способная, чтобы ты не говорила", "Ты красотка", "Если и есть в этом мире сила, то она вся в тебе",],
-            love: ["Люблю тебя бесконечно сильно", "Ооооочень сильно тебя люблю", "Безумно люблю тебя, зайка", "Люблю тебя безумно сильно", "Сильно сильно тебя люблю", "Очень очень очень очень очень очень сильно тебя люблю моя прелесть!", "Люблю тебя, солнышко"],
-            morning: ["Доброе утро, солнце!", "Доброе утречко, зайка", "Хорошего тебе дня, солнышко", "Добренькое утро, любимая", "Доброе утро моя маленькая"],
-            night: ["Сладких снов, солнышко", "Надеюсь тебе приснимся мы", "Сладеньких снов, принцесска", "Спи спокойно, зайка", "Сладких снов, люблю тебя <3 "],
-            pleasant: ["Ты самая лучшая, зайка, всегда знай это", "Я люблю тебя всегда, абсолютно всегда", "Твоё тепло греет меня до сих пор", "Ты безумно красивая, зайка", "Твои глаза словно космос", "Если бы сажали за красоту ты бы уже сидела", "При виде тебя поднимается настроение", "После сообщения от тебя, я снова становлюсь маленьким ребёнком", "Ты моя прелесть", "Обнимаю тебя моя маленькая", "1000 виртуальных поцелуев для моей принцессы 😘", "Самого хорошего дня тебе любимая", "Радость моя"]
-        };
+  <div id="infoModal" class="modal-overlay" style="z-index: 320;">
+    <div class="modal-box">
+      <h2 style="margin-top:0; color:#ff4d4d;">Памятка</h2>
+      <p style="line-height: 1.6; font-size: 14px;">
+        Любимая!<br><br>
+        1. <b>Карточка дня</b> обновляется каждое утро.<br><br>
+        2. Если грустно — жми на кнопки ниже карточки.<br><br>
+        3. Сердечко сверху справа — это <b>Я</b>.<br><br>
+        4. Сброс дат в системе, если ошиблась.<br><br>
+        5. Кнопка глаза в углу, для красивого обзора.<br><br>
+        6. В системе встроена смена времни года.<br><br>
+        Я люблю тебя.
+      </p>
+      <button class="close-info" onclick="closeInfo()">Понятно</button>
+    </div>
+  </div>
 
-        let startDate, dembelDate;
-        let debugDays = 0;
+  <script>
+    // ==========================================
+    // ЧАСТЬ 1: ЛОГИКА ДЕРЕВА И СЕЗОНОВ
+    // ==========================================
+    const treeCanvas = document.getElementById('treeCanvas');
+    const tCtx = treeCanvas.getContext('2d', { alpha: true });
 
-        // --- ГЕНЕРАТОР РАНДОМА С ЗЕРНОМ (SEED) ---
-        function mulberry32(a) {
-            return function () {
-                var t = a += 0x6D2B79F5;
-                t = Math.imul(t ^ t >>> 15, t | 1);
-                t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-                return ((t ^ t >>> 14) >>> 0) / 4294967296;
-            }
+    const frontCanvas = document.getElementById('frontCanvas');
+    const fCtx = frontCanvas.getContext('2d', { alpha: true });
+
+    let treeWidth, treeHeight;
+    const targetFPS = 30;
+    const frameInterval = 1000 / targetFPS;
+    let lastTreeTime = 0;
+    let isTreeVisible = true;
+
+    const heartScaleRatio = 0.6;
+    const heartCenterYRatio = 0.5;
+
+    const fallingLimit = 50;
+
+    let sakuraSprite, oakLeafSprite, snowflakeSprite;
+
+    let branches = [];
+    let sakuraPuffs = [], oakPuffs = [];
+    let sakuraFlowers = [], oakLeaves = [];
+    let groundLeaves = [];
+    let snowOnBranches = [];
+    let fallingElements = [];
+
+    let currentSeasonParams = {
+      leafColorR: 255, leafColorG: 182, leafColorB: 193,
+      oakColorR: 76, oakColorG: 175, oakColorB: 80,
+      foliageDensity: 1.0,
+      snowAmount: 0,
+      groundSnowHeight: 0,
+      isSnowing: false,
+      fallRate: 0.05
+    };
+
+    let manualSeasonDate = null;
+
+    function initTree() {
+      createSprites();
+      resizeTree();
+      window.addEventListener('resize', resizeTree);
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          isTreeVisible = false;
+        } else {
+          isTreeVisible = true;
+          lastTreeTime = performance.now();
+          animateTree(lastTreeTime);
         }
+      });
 
-        function shuffleWithSeed(array, seed) {
-            const rng = mulberry32(seed);
-            let currentIndex = array.length, randomIndex;
-            while (currentIndex != 0) {
-                randomIndex = Math.floor(rng() * currentIndex);
-                currentIndex--;
-                [array[currentIndex], array[randomIndex]] = [
-                    array[randomIndex], array[currentIndex]];
-            }
-            return array;
+      animateTree(0);
+    }
+
+    function createSprites() {
+      sakuraSprite = document.createElement('canvas');
+      sakuraSprite.width = 10; sakuraSprite.height = 10;
+      let sCtx = sakuraSprite.getContext('2d');
+      sCtx.fillStyle = '#ffb6c1';
+      sCtx.translate(5, 5);
+      for (let i = 0; i < 5; i++) {
+        sCtx.beginPath(); sCtx.arc(0, -2, 2, 0, Math.PI * 2); sCtx.fill();
+        sCtx.rotate(Math.PI * 2 / 5);
+      }
+      sCtx.setTransform(1, 0, 0, 1, 0, 0);
+
+      oakLeafSprite = document.createElement('canvas');
+      oakLeafSprite.width = 10; oakLeafSprite.height = 10;
+      let oCtx = oakLeafSprite.getContext('2d');
+      oCtx.fillStyle = '#4caf50';
+      oCtx.translate(5, 5);
+      oCtx.beginPath(); oCtx.ellipse(0, 0, 4, 2, 0, 0, Math.PI * 2); oCtx.fill();
+      oCtx.setTransform(1, 0, 0, 1, 0, 0);
+
+      snowflakeSprite = document.createElement('canvas');
+      snowflakeSprite.width = 8; snowflakeSprite.height = 8;
+      let snCtx = snowflakeSprite.getContext('2d');
+      snCtx.fillStyle = '#ffffff';
+      snCtx.beginPath(); snCtx.arc(4, 4, 2, 0, Math.PI * 2); snCtx.fill();
+    }
+
+    function resizeTree() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = treeCanvas.getBoundingClientRect();
+
+      [treeCanvas, frontCanvas].forEach(canvas => {
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        canvas.getContext('2d').scale(dpr, dpr);
+        canvas.getContext('2d').imageSmoothingEnabled = true;
+        canvas.getContext('2d').imageSmoothingQuality = 'high';
+      });
+
+      treeWidth = rect.width;
+      treeHeight = rect.height;
+
+      generateTreeStructure();
+      loadFoliageFromCache();
+    }
+
+    function isInsideHeart(x, y, cx, cy, scale) {
+      let nx = (x - cx) / scale;
+      let ny = -(y - cy) / scale;
+      return Math.pow(nx * nx + ny * ny - 1, 3) - (nx * nx * Math.pow(ny, 3)) <= 0;
+    }
+
+    function generateTreeStructure() {
+      branches = [];
+      const cx = treeWidth / 2;
+      const groundY = treeHeight;
+      const hCy = treeHeight * heartCenterYRatio;
+      const scale = Math.min(treeWidth, treeHeight) * heartScaleRatio;
+
+      const heartCy = hCy;
+      const trunkTopY = heartCy + (scale * 0.8);
+      const trunkBottomY = groundY;
+
+      branches.push({
+        x1: cx - treeWidth * 0.03, y1: trunkBottomY,
+        x2: cx + treeWidth * 0.03, y2: trunkBottomY,
+        x3: cx + treeWidth * 0.02, y3: trunkTopY,
+        x4: cx - treeWidth * 0.02, y4: trunkTopY,
+        isTrunk: true, length: treeHeight * 0.25
+      });
+
+      function createBranch(sx, sy, angle, len, depth, side) {
+        if (depth <= 0 || len < 5) return;
+
+        const ex = sx + Math.cos(angle) * len;
+        const ey = sy + Math.sin(angle) * len;
+
+        if (!isInsideHeart(ex, ey, cx, heartCy, scale)) return;
+
+        branches.push({ x1: sx, y1: sy, x2: ex, y2: ey, w: Math.max(1, depth * 1.5), isTrunk: false, length: len, side: side });
+
+        const subLen = len * 0.75;
+
+        if (side === 'center') {
+          createBranch(ex, ey, angle - 0.6, subLen, depth - 1, 'left');
+          createBranch(ex, ey, angle, subLen, depth - 1, 'center');
+          createBranch(ex, ey, angle + 0.6, subLen, depth - 1, 'right');
+        } else if (side === 'left') {
+          createBranch(ex, ey, angle - 0.8, subLen, depth - 1, 'left');
+          createBranch(ex, ey, angle + 0.4, subLen, depth - 1, 'center');
+        } else {
+          createBranch(ex, ey, angle + 0.8, subLen, depth - 1, 'right');
+          createBranch(ex, ey, angle - 0.4, subLen, depth - 1, 'center');
         }
+      }
 
-        // --- ИНИЦИАЛИЗАЦИЯ ---
-        function init() {
-            const savedStart = localStorage.getItem('armyStartDate');
-            const savedEnd = localStorage.getItem('armyEndDate');
-            const savedDebug = localStorage.getItem('debugOffset');
+      const mLen = scale * 0.35;
+      createBranch(cx, trunkTopY, -Math.PI / 2, mLen, 8, 'center');
+      createBranch(cx, trunkTopY, -Math.PI / 2 - 1.0, mLen * 0.9, 7, 'left');
+      createBranch(cx, trunkTopY, -Math.PI / 2 + 1.0, mLen * 0.9, 7, 'right');
+    }
 
-            if (savedDebug) {
-                debugDays = parseInt(savedDebug);
-                document.getElementById('debugOffset').value = debugDays;
-            }
+    function loadFoliageFromCache() {
+      generateFoliage(false);
+    }
 
-            if (savedStart && savedEnd) {
-                startDate = new Date(savedStart);
-                startDate.setHours(0, 0, 0, 0);
-                dembelDate = new Date(savedEnd);
-                dembelDate.setHours(0, 0, 0, 0);
+    function generateFoliage(saveToCache = false) {
+      sakuraPuffs = []; oakPuffs = []; sakuraFlowers = []; oakLeaves = [];
+      snowOnBranches = [];
+      const cx = treeWidth / 2;
+      const hCy = treeHeight * heartCenterYRatio;
+      const scale = Math.min(treeWidth, treeHeight) * heartScaleRatio;
 
-                document.getElementById('setupScreen').style.display = 'none';
-                document.getElementById('appContent').classList.remove('blurred');
-                startApp();
+      branches.forEach(branch => {
+        if (branch.isTrunk) return;
+        const isTip = branch.length < scale * 0.15;
+
+        if (isTip) {
+          const puffDensity = 40;
+          const numPuffs = Math.floor(branch.length / puffDensity);
+
+          for (let k = 0; k < numPuffs; k++) {
+            const t = Math.random();
+            const px = branch.x1 + (branch.x2 - branch.x1) * t;
+            const py = branch.y1 + (branch.y2 - branch.y1) * t;
+            const dx = branch.x2 - branch.x1; const dy = branch.y2 - branch.y1;
+            const len = Math.sqrt(dx * dx + dy * dy);
+            const nx = -dy / len; const ny = dx / len;
+            const offset = (Math.random() - 0.5) * 20;
+
+            if (branch.side === 'left' || branch.side === 'center') {
+              sakuraPuffs.push({ x: px + nx * offset, y: py + ny * offset, radius: 15 + Math.random() * 5 });
             } else {
-                document.getElementById('setupScreen').style.display = 'flex';
-                document.getElementById('appContent').classList.add('blurred');
+              oakPuffs.push({ x: px + nx * offset, y: py + ny * offset, radius: 15 + Math.random() * 5 });
             }
+          }
+        }
+      });
+
+      let totalLeft = 0, totalRight = 0, totalCenter = 0;
+      branches.forEach(b => {
+        if (!b.isTrunk) {
+          if (b.side === 'left') totalLeft += b.length;
+          else if (b.side === 'right') totalRight += b.length;
+          else totalCenter += b.length;
+        }
+      });
+
+      branches.forEach(branch => {
+        if (branch.isTrunk) return;
+        const side = branch.side;
+        const totalCount = (side === 'center') ? 300 : ((side === 'left') ? 400 : 400);
+
+        let totalLenRef = 0;
+        if (side === 'left') totalLenRef = totalLeft;
+        else if (side === 'right') totalLenRef = totalRight;
+        else totalLenRef = totalCenter;
+
+        const count = Math.ceil((branch.length / totalLenRef) * totalCount);
+        const arr = (side === 'right') ? oakLeaves : sakuraFlowers;
+
+        const dx = branch.x2 - branch.x1; const dy = branch.y2 - branch.y1;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        const nx = -dy / len; const ny = dx / len;
+
+        for (let i = 0; i < count; i++) {
+          const t = Math.random();
+          const fx = branch.x1 + dx * t; const fy = branch.y1 + dy * t;
+          const sp = (Math.random() - 0.5) * 25;
+          arr.push({ x: fx + nx * sp, y: fy + ny * sp, rot: Math.random() * Math.PI * 2, size: 0.5 + Math.random() * 0.5 });
         }
 
-        function saveDatesAndStart() {
-            const startVal = document.getElementById('startDateInput').value;
-            const endVal = document.getElementById('endDateInput').value;
-            if (!startVal || !endVal) { alert("Выбери обе даты!"); return; }
-
-            startDate = new Date(startVal); startDate.setHours(0, 0, 0, 0);
-            dembelDate = new Date(endVal); dembelDate.setHours(0, 0, 0, 0);
-
-            localStorage.setItem('armyStartDate', startVal);
-            localStorage.setItem('armyEndDate', endVal);
-
-            document.getElementById('setupScreen').style.display = 'none';
-            document.getElementById('appContent').classList.remove('blurred');
-            startApp();
+        for (let i = 0; i < count / 2; i++) {
+          const t = Math.random();
+          const fx = branch.x1 + dx * t; const fy = branch.y1 + dy * t;
+          const sp = (Math.random() - 0.5) * 25;
+          snowOnBranches.push({ x: fx + nx * sp, y: fy + ny * sp, size: 1 + Math.random() * 2 });
         }
+      });
 
-        function startApp() {
-            setRandomGreeting();
-            updateDailyCard();
-            updateDembelTimer();
-            setInterval(updateDembelTimer, 60000);
-            setInterval(updateMidnightTimer, 1000);
-            initScrollHide();
-        }
+      generateGroundLeaves();
+    }
 
-        // --- СКРЫТИЕ КНОПОК ПРИ СКРОЛЛЕ ---
-        function initScrollHide() {
-            let lastScrollTop = 0;
-            const nav = document.getElementById('topNav');
-            const delta = 5;
+    function generateGroundLeaves() {
+      groundLeaves = [];
+      const timerBoxHeight = 0;
+      const groundCount = 200;
 
-            window.addEventListener('scroll', function () {
-                let nowScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      for (let i = 0; i < groundCount; i++) {
+        const gx = (Math.random() - 0.5) * treeWidth * 0.9 + (treeWidth / 2);
+        const gy = (treeHeight - timerBoxHeight) - Math.random() * 7;
+        const isSakura = Math.random() > 0.3;
 
-                if (Math.abs(lastScrollTop - nowScrollTop) <= delta) return;
-
-                if (nowScrollTop > lastScrollTop && nowScrollTop > 50) {
-                    nav.classList.add('hidden-nav');
-                } else {
-                    if (nowScrollTop + window.innerHeight < document.body.scrollHeight) {
-                        nav.classList.remove('hidden-nav');
-                    }
-                }
-                lastScrollTop = nowScrollTop;
-            });
-        }
-
-        // --- ЛОГИКА СЕРДЦА ---
-        const heartBtn = document.getElementById('heartBtn');
-        const heartAudio = document.getElementById('heartAudio');
-        let isPlaying = false;
-        heartBtn.addEventListener('click', () => {
-            if (!isPlaying) {
-                heartBtn.classList.add('beating');
-                isPlaying = true;
-                heartAudio.play().catch(e => console.log("Audio error"));
-            } else {
-                heartBtn.classList.remove('beating');
-                isPlaying = false;
-                heartAudio.pause();
-            }
+        groundLeaves.push({
+          x: gx, y: gy,
+          rot: Math.random() * Math.PI * 2,
+          size: 0.6 + Math.random() * 0.6,
+          type: isSakura ? 'sakura' : 'oak'
         });
+      }
+    }
 
-        // --- КАРТОЧКА ДНЯ (С РАНДОМОМ ПО МЕСЯЦАМ) ---
-        function updateDailyCard() {
-            const now = new Date();
-            now.setHours(0, 0, 0, 0);
+    function updateGroundLeavesPosition() {
+      generateGroundLeaves();
+    }
 
-            let realDiff = Math.floor((now - startDate) / (1000 * 60 * 60 * 24)) + 1;
-            if (realDiff < 1) realDiff = 1;
+    function updateSeasonParams(dt) {
+      let now = new Date();
+      if (manualSeasonDate) now = new Date(manualSeasonDate);
 
-            const totalDays = realDiff + debugDays;
-            document.getElementById('cardDateLabel').innerText = `ДЕНЬ СЛУЖБЫ: ${totalDays}`;
+      const month = now.getMonth();
+      const day = now.getDate();
 
-            let item;
+      let targetParams = {
+        density: 1, snow: 0, groundH: 0, snowing: false, rate: 0.05,
+        lR: 255, lG: 182, lB: 193,
+        oR: 76, oG: 175, oB: 80
+      };
 
-            // 1. ПЕРВЫЙ МЕСЯЦ (Дни 1-31): СТРОГО ПО ПОРЯДКУ
-            if (totalDays <= 31) {
-                const index = (totalDays - 1) % dailyContent.length;
-                item = dailyContent[index];
+      if (month === 11 || month === 0 || month === 1) {
+        targetParams.density = 0;
+        targetParams.snow = 1;
+        targetParams.groundH = 40;
+        targetParams.snowing = true;
+        targetParams.rate = 0.2;
+      } else if (month === 2 || month === 3 || month === 4) {
+        let progress = (month - 2) + (day / 30);
+        targetParams.density = progress;
+        targetParams.snow = 1 - progress;
+        targetParams.groundH = 40 * (1 - progress);
+        targetParams.snowing = progress < 0.3;
+        targetParams.rate = 0.05;
+      } else if (month === 5 || month === 6 || month === 7) {
+        targetParams.density = 1;
+        targetParams.snow = 0;
+        targetParams.groundH = 0;
+        targetParams.snowing = false;
+        targetParams.rate = 0.02;
+      } else {
+        let progress = (month - 8) + (day / 30);
+        targetParams.density = 1 - (progress * 0.8);
+        targetParams.snow = 0;
+        targetParams.groundH = 0;
+        targetParams.snowing = false;
+        targetParams.rate = 0.1 + (progress * 0.1);
+
+        targetParams.lR = 255; targetParams.lG = 165; targetParams.lB = 0;
+        targetParams.oR = 218; targetParams.oG = 165; targetParams.oB = 32;
+      }
+
+      const smooth = 0.05;
+
+      currentSeasonParams.foliageDensity = lerp(currentSeasonParams.foliageDensity, targetParams.density, smooth);
+      currentSeasonParams.snowAmount = lerp(currentSeasonParams.snowAmount, targetParams.snow, smooth);
+      currentSeasonParams.groundSnowHeight = lerp(currentSeasonParams.groundSnowHeight, targetParams.groundH, smooth);
+      currentSeasonParams.isSnowing = targetParams.snowing;
+      currentSeasonParams.fallRate = lerp(currentSeasonParams.fallRate, targetParams.rate, smooth);
+
+      currentSeasonParams.leafColorR = lerp(currentSeasonParams.leafColorR, targetParams.lR, smooth);
+      currentSeasonParams.leafColorG = lerp(currentSeasonParams.leafColorG, targetParams.lG, smooth);
+      currentSeasonParams.leafColorB = lerp(currentSeasonParams.leafColorB, targetParams.lB, smooth);
+
+      currentSeasonParams.oakColorR = lerp(currentSeasonParams.oakColorR, targetParams.oR, smooth);
+      currentSeasonParams.oakColorG = lerp(currentSeasonParams.oakColorG, targetParams.oG, smooth);
+      currentSeasonParams.oakColorB = lerp(currentSeasonParams.oakColorB, targetParams.oB, smooth);
+    }
+
+    function lerp(start, end, t) {
+      return start * (1 - t) + end * t;
+    }
+
+    function drawTreeStatic() {
+      tCtx.clearRect(0, 0, treeWidth, treeHeight);
+
+      branches.forEach(b => {
+        if (b.isTrunk) {
+          tCtx.fillStyle = '#5d4037';
+          tCtx.beginPath(); tCtx.moveTo(b.x1, b.y1); tCtx.lineTo(b.x2, b.y2); tCtx.lineTo(b.x3, b.y3); tCtx.lineTo(b.x4, b.y4); tCtx.closePath(); tCtx.fill();
+        } else {
+          tCtx.beginPath(); tCtx.moveTo(b.x1, b.y1); tCtx.lineTo(b.x2, b.y2);
+          tCtx.strokeStyle = '#5d4037'; tCtx.lineWidth = b.w; tCtx.lineCap = 'round'; tCtx.stroke();
+        }
+      });
+
+      if (currentSeasonParams.snowAmount < 0.8) {
+        tCtx.globalCompositeOperation = 'screen';
+
+        let glowColor;
+        if (currentSeasonParams.leafColorR > 200 && currentSeasonParams.leafColorG < 100) {
+          glowColor = `rgba(255, 215, 0, 0.1)`;
+        } else {
+          glowColor = `rgba(255, 182, 193, 0.1)`;
+        }
+
+        [...sakuraPuffs, ...oakPuffs].forEach(p => {
+          const alpha = 0.1 * currentSeasonParams.foliageDensity;
+          tCtx.fillStyle = glowColor;
+          tCtx.beginPath(); tCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); tCtx.fill();
+        });
+        tCtx.globalCompositeOperation = 'source-over';
+      }
+
+      if (currentSeasonParams.foliageDensity > 0.05) {
+        updateSpritesColor();
+        drawBatch(tCtx, sakuraFlowers, sakuraSprite);
+        drawBatch(tCtx, oakLeaves, oakLeafSprite);
+      }
+
+      if (currentSeasonParams.snowAmount > 0.1) {
+        tCtx.fillStyle = '#ffffff';
+        snowOnBranches.forEach((item, index) => {
+          if (index % Math.ceil(1 / currentSeasonParams.snowAmount) !== 0) return;
+          tCtx.beginPath();
+          tCtx.arc(item.x, item.y, item.size, 0, Math.PI * 2);
+          tCtx.fill();
+        });
+      }
+    }
+
+    function drawFrontLayer() {
+      fCtx.clearRect(0, 0, treeWidth, treeHeight);
+
+      groundLeaves.forEach(leaf => {
+        const spr = leaf.type === 'sakura' ? sakuraSprite : oakLeafSprite;
+        fCtx.save();
+        fCtx.translate(leaf.x, leaf.y);
+        fCtx.rotate(leaf.rot);
+        fCtx.scale(leaf.size, leaf.size);
+        fCtx.drawImage(spr, -spr.width / 2, -spr.height / 2);
+        fCtx.restore();
+      });
+
+      // 2. Сугроб
+      if (currentSeasonParams.groundSnowHeight > 1) {
+        fCtx.fillStyle = 'rgba(255, 255, 255, 1)';
+        fCtx.beginPath();
+
+        // Начинаем строго с левого нижнего угла
+        fCtx.moveTo(0, treeHeight);
+
+        const baseLine = treeHeight;
+        // Левый край сугроба
+        fCtx.lineTo(0, baseLine - currentSeasonParams.groundSnowHeight);
+
+        // Рисуем волну
+        for (let x = 0; x <= treeWidth; x += 20) {
+          fCtx.lineTo(x, baseLine - currentSeasonParams.groundSnowHeight + Math.sin(x * 0.01) * 5);
+        }
+
+        // --- ИСПРАВЛЕНИЕ СРЕЗА СПРАВА ---
+        // Принудительно ставим точку в самом правом нижнем углу
+        fCtx.lineTo(treeWidth, baseLine - currentSeasonParams.groundSnowHeight + Math.sin(treeWidth * 0.01) * 5);
+        fCtx.lineTo(treeWidth, treeHeight);
+
+        fCtx.closePath();
+        fCtx.fill();
+      }
+      const limitY = treeHeight;
+
+      for (let i = fallingElements.length - 1; i >= 0; i--) {
+        const el = fallingElements[i];
+
+        el.x += el.vx;
+        el.y += el.vy;
+        el.rot += el.rs;
+
+        if (el.type === 'snow') {
+          el.x += Math.sin(el.y * 0.05) * 0.5;
+        } else {
+          el.vx += Math.sin(el.y * 0.05) * 0.05;
+        }
+
+        if (el.x < 0) el.x = 0;
+        if (el.x > treeWidth) el.x = treeWidth;
+
+        const spr = el.type === 'snow' ? snowflakeSprite : (el.type === 'sakura' ? sakuraSprite : oakLeafSprite);
+
+        fCtx.save(); fCtx.translate(el.x, el.y); fCtx.rotate(el.rot); fCtx.scale(el.size, el.size);
+        fCtx.drawImage(spr, -spr.width / 2, -spr.height / 2); fCtx.restore();
+
+        if (el.y > limitY) fallingElements.splice(i, 1);
+      }
+    }
+
+    let lastPhase = '';
+    function updateSpritesColor() {
+      const sCtx = sakuraSprite.getContext('2d');
+      sCtx.clearRect(0, 0, 10, 10);
+      sCtx.fillStyle = `rgb(${currentSeasonParams.leafColorR}, ${currentSeasonParams.leafColorG}, ${currentSeasonParams.leafColorB})`;
+      sCtx.translate(5, 5);
+      for (let i = 0; i < 5; i++) {
+        sCtx.beginPath(); sCtx.arc(0, -2, 2, 0, Math.PI * 2); sCtx.fill();
+        sCtx.rotate(Math.PI * 2 / 5);
+      }
+      sCtx.setTransform(1, 0, 0, 1, 0, 0);
+
+      const oCtx = oakLeafSprite.getContext('2d');
+      oCtx.clearRect(0, 0, 10, 10);
+      oCtx.fillStyle = `rgb(${currentSeasonParams.oakColorR}, ${currentSeasonParams.oakColorG}, ${currentSeasonParams.oakColorB})`;
+      oCtx.translate(5, 5);
+      oCtx.beginPath(); oCtx.ellipse(0, 0, 4, 2, 0, 0, Math.PI * 2); oCtx.fill();
+      oCtx.setTransform(1, 0, 0, 1, 0, 0);
+    }
+
+    function drawBatch(ctx, arr, sprite) {
+      const w = sprite.width / 2, h = sprite.height / 2;
+      arr.forEach(item => {
+        ctx.save();
+        ctx.translate(item.x, item.y);
+        ctx.rotate(item.rot);
+        ctx.scale(item.size, item.size);
+        ctx.drawImage(sprite, -w, -h);
+        ctx.restore();
+      });
+    }
+
+    function animateTree(currentTime) {
+      if (!isTreeVisible) return;
+      animationFrameId = requestAnimationFrame(animateTree);
+      const dtMs = currentTime - lastTreeTime;
+      if (dtMs < frameInterval) return;
+      lastTreeTime = currentTime - (dtMs % frameInterval);
+
+      updateSeasonParams(dtMs / 1000);
+
+      drawTreeStatic();
+      drawFrontLayer();
+
+      if (fallingElements.length < fallingLimit && Math.random() < currentSeasonParams.fallRate) {
+        const isSnow = currentSeasonParams.isSnowing;
+
+        if (isSnow) {
+          fallingElements.push({
+            type: 'snow',
+            x: Math.random() * treeWidth,
+            y: -10,
+            vx: (Math.random() - 0.5) * 1,
+            vy: 1 + Math.random() * 2,
+            rot: Math.random() * Math.PI * 2, rs: (Math.random() - 0.5) * 0.05,
+            size: 0.5 + Math.random() * 0.8
+          });
+        } else {
+          if (currentSeasonParams.foliageDensity > 0.1) {
+            const nb = branches.filter(b => !b.isTrunk);
+            if (nb.length > 0) {
+              const rb = nb[Math.floor(Math.random() * nb.length)];
+              const t = Math.random();
+              fallingElements.push({
+                type: (rb.side === 'right') ? 'oak' : 'sakura',
+                x: rb.x1 + (rb.x2 - rb.x1) * t, y: rb.y1 + (rb.y2 - rb.y1) * t,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: 1 + Math.random() * 2,
+                rot: Math.random() * Math.PI * 2, rs: (Math.random() - 0.5) * 0.1,
+                size: 0.8 + Math.random() * 0.4
+              });
             }
-            // 2. ВТОРОЙ МЕСЯЦ И ДАЛЕЕ: РАНДОМ НА КАЖДЫЙ МЕСЯЦ
-            else {
-                const currentMonth = now.getMonth(); // 0-11
-                const currentYear = now.getFullYear();
-                const dayOfMonth = now.getDate(); // 1-31
+          }
+        }
+      }
+    }
 
-                // Сколько дней в текущем календарном месяце
-                const daysInThisMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    initTree();
 
-                // Уникальное зерно для этого месяца (например, 202605 для Мая 2026)
-                const seed = currentYear * 100 + (currentMonth + 1);
 
-                // Берем копию фраз, обрезанную под кол-во дней в месяце
-                let monthlyPhrases = dailyContent.slice(0, daysInThisMonth);
+    // ==========================================
+    // ЧАСТЬ 2: ЛОГИКА САЙТА
+    // ==========================================
 
-                // Перемешиваем их стабильно для этого месяца
-                monthlyPhrases = shuffleWithSeed(monthlyPhrases, seed);
+    const ITEM_HEIGHT = 30;
+    const REPEAT_COUNT = 50;
+    const months = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
+    const currentYear = new Date().getFullYear();
 
-                // Выбираем фразу по текущему числу
-                const index = dayOfMonth - 1;
-                item = monthlyPhrases[index];
-            }
+    function initPickers() {
+      setupColumn('startDayCol', 1, 31, 'day');
+      setupColumn('startMonthCol', 1, 12, 'month');
+      setupColumn('startYearCol', currentYear - 1, currentYear + 5, 'year');
+      setupColumn('endDayCol', 1, 31, 'day');
+      setupColumn('endMonthCol', 1, 12, 'month');
+      setupColumn('endYearCol', currentYear - 1, currentYear + 5, 'year');
+      setPickerValue('start', new Date());
+      let endDate = new Date(); endDate.setFullYear(endDate.getFullYear() + 1);
+      setPickerValue('end', endDate);
+    }
 
-            // Отрисовка
-            const cardBody = document.getElementById('cardBody');
-            cardBody.style.opacity = 0;
+    function setupColumn(id, min, max, type) {
+      const el = document.getElementById(id);
+      let html = '';
+      for (let r = 0; r < REPEAT_COUNT; r++) {
+        for (let i = min; i <= max; i++) {
+          let val = type === 'month' ? months[i - 1] : i;
+          html += `<div class="drum-item" data-val="${i}">${val}</div>`;
+        }
+      }
+      el.innerHTML = html;
+      el.addEventListener('scroll', () => { updateHighlight(el); checkInfiniteLoop(el, min, max); });
+      el.addEventListener('click', (e) => {
+        if (e.target.classList.contains('drum-item')) {
+          const rect = e.target.getBoundingClientRect();
+          const containerRect = el.getBoundingClientRect();
+          const offsetTop = rect.top - containerRect.top + el.scrollTop;
+          const targetScroll = offsetTop - (el.clientHeight / 2) + (ITEM_HEIGHT / 2);
+          el.scrollTo({ top: targetScroll, behavior: 'smooth' });
+        }
+      });
+      el.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        el.scrollBy({ top: Math.sign(e.deltaY) * ITEM_HEIGHT, behavior: 'smooth' });
+      }, { passive: false });
+      updateHighlight(el);
+    }
 
-            setTimeout(() => {
-                if (item && item.type === 'img') {
-                    cardBody.innerHTML = `<img src="${item.src}" class="card-img"><p>${item.content}</p>`;
-                } else if (item) {
-                    cardBody.innerHTML = `<p>"${item.content}"</p>`;
-                } else {
-                    cardBody.innerHTML = "<p>Сообщение не найдено</p>";
-                }
-                cardBody.style.opacity = 1;
-            }, 300);
+    function checkInfiniteLoop(el, min, max) {
+      const rangeSize = (max - min + 1) * ITEM_HEIGHT;
+      const threshold = rangeSize * 5;
+      if (el.scrollTop < threshold) el.scrollTop += rangeSize * Math.floor(REPEAT_COUNT / 2);
+      else if (el.scrollTop > el.scrollHeight - threshold - el.clientHeight) el.scrollTop -= rangeSize * Math.floor(REPEAT_COUNT / 2);
+    }
 
-            updateMidnightTimer();
+    function updateHighlight(column) {
+      const scrollTop = column.scrollTop;
+      const centerIndex = Math.round((scrollTop + (column.clientHeight / 2) - (ITEM_HEIGHT / 2)) / ITEM_HEIGHT);
+      const items = column.querySelectorAll('.drum-item');
+      const prev = column.querySelector('.active');
+      if (prev && prev !== items[centerIndex]) prev.classList.remove('active');
+      if (items[centerIndex]) items[centerIndex].classList.add('active');
+    }
+
+    function setPickerValue(prefix, date) {
+      scrollToValue(`${prefix}DayCol`, date.getDate());
+      scrollToValue(`${prefix}MonthCol`, date.getMonth() + 1);
+      scrollToValue(`${prefix}YearCol`, date.getFullYear());
+    }
+
+    function scrollToValue(colId, value) {
+      const col = document.getElementById(colId);
+      const items = col.querySelectorAll('.drum-item');
+      let targetIndex = -1;
+      const middleStart = Math.floor((items.length / REPEAT_COUNT) * (REPEAT_COUNT / 2));
+      for (let i = middleStart; i < middleStart + 100; i++) {
+        if (items[i] && parseInt(items[i].getAttribute('data-val')) === value) { targetIndex = i; break; }
+      }
+      if (targetIndex !== -1) {
+        col.style.scrollBehavior = 'auto';
+        col.scrollTop = targetIndex * ITEM_HEIGHT;
+        col.style.scrollBehavior = 'smooth';
+        updateHighlight(col);
+      }
+    }
+
+    function getPickerDate(prefix) {
+      const day = getSelectedValue(`${prefix}DayCol`);
+      const month = getSelectedValue(`${prefix}MonthCol`) - 1;
+      const year = getSelectedValue(`${prefix}YearCol`);
+      return new Date(year, month, day);
+    }
+
+    function getSelectedValue(colId) {
+      const col = document.getElementById(colId);
+      const scrollTop = col.scrollTop;
+      const centerIndex = Math.round((scrollTop + (col.clientHeight / 2) - (ITEM_HEIGHT / 2)) / ITEM_HEIGHT);
+      const item = col.children[centerIndex];
+      return (item && item.getAttribute('data-val')) ? parseInt(item.getAttribute('data-val')) : 1;
+    }
+
+    const greetings = [
+      "Привет, зайка ❤️", "Как дела солнышко", "Люблю тебя бесконечно сильно 💞",
+      "Привет, моя хорошая😍", "Я очень скучаю(", "Ты самое дорогое золотце",
+      "Обнимаю крепко-крепко🤗", "Привет, солнышо❤️", "Ты лучшее что случалось в моей жизни",
+      "Люблю тебя зайка😘", "Хорошего тебе дня любимая", "Сколько там осталось?",
+      "Ты безумно красивая😽"
+    ];
+
+    const dailyContent = [
+      { type: 'text', content: "Ты самая лучшая девушка на свете <3" },
+      { type: 'text', content: "Безумно сильно люблю тебя и скучаю, солнышко!" },
+      { type: 'text', content: "Ты безумно красивая, солнышко, твоя улыбка, глаза, божеее... Я тону в твоей красоте" },
+      { type: 'text', content: "Поскорее бы увидеть тебя и обнять(" },
+      { type: 'text', content: "Мне тебя безумно не хватает..." },
+      { type: 'text', content: "Не проходит ни дня без мысли о тебе" },
+      { type: 'text', content: "Каждое мгновенье я вижу тебя рядом с собой" },
+      { type: 'text', content: "Один день без тебя - самый унылый день в жизни" },
+      { type: 'text', content: "Ты делаешь меня счастливым моя любименькая)" },
+      { type: 'text', content: "Жду не дождусь нашей встречи, зайка" },
+      { type: 'text', content: "Хорошо ли проходят твои дни, солнце? Я скучаю ,_," },
+      { type: 'text', content: "Вот бы снова посмотреть с тобой фильм вечером после тяжелого дня" },
+      { type: 'text', content: "Всё бы отдал лишь бы обнять тебя вновь" },
+      { type: 'text', content: "С каждым днём мы всё ближе к друг другу, любимая <3" },
+      { type: 'text', content: "Всё обязательно будет хорошо солнышко" },
+      { type: 'text', content: "А я тебя люблю очень сильно)" },
+      { type: 'text', content: "Когда я называю тебя 'солнцем' я говорю это всерьёз, для меня ты самое яркое солнышко" },
+      { type: 'text', content: "Вспоминая о времени проведённым с тобой, я невольно улыбаюсь)" },
+      { type: 'text', content: "Спасибо за каждый миг что ты со мной любименькая <3" },
+      { type: 'text', content: "Я безумно рад тому что именно ты моя девушка" },
+      { type: 'text', content: "У тебя обязательно всё получиться, чтобы ты не задумала" },
+      { type: 'text', content: "Береги себя и не забрасывай своё здоровье, и ещё кушай хорошо, люблю тебя" },
+      { type: 'text', content: "Мне не хватает наших совместных вечеров любимая ,_," },
+      { type: 'text', content: "Ты единственная и невероятная для меня" },
+      { type: 'text', content: "Если бы у меня были 1000 жизней, каждую из них я бы выбрал провести с тобой" },
+      { type: 'text', content: "Ты моё самое дорогое счастье!" },
+      { type: 'text', content: "Хотелось бы скинуть тебе пару десятков тик токов о том как сильно я тебя люблю (┬┬┬┬)" },
+      { type: 'text', content: "Влюбиться в тебя было лучшей случайностью в моей жизни" },
+      { type: 'text', content: "С тобой я чувствую себя по-настоящему живым" },
+      { type: 'text', content: "Моё сердце бьётся чаще при виде тебя" },
+      { type: 'text', content: "Я всегда за тебя моя маленькая, всегда поддержу и буду рядом, солнышко" },
+      { type: 'text', content: "Ты моя принцесса, самое дорогое золотце моё, Безумно сильно тебя люблю" }
+    ];
+
+    const quickMsgs = {
+      support: ["У тебя обязательно всё получиться зайка", "Я всегда в тебя верю любимая", "Ты умничка", "Умничка моя", "Всё что задумала сбудется", "Молодчинка", "Я горжусь тобой, солнышко", "Ты у меня такая сильная", "Не переживай сильно, всё плохое пройдёт и наступит свет", "Если что-то не получается сейчас, попробуй чуть позже", "Я рядом, любимая, хоть и не физически", "Я знаю что ты у меня самая умненькая и способная, чтобы ты не говорила", "Ты красотка", "Если и есть в этом мире сила, то она вся в тебе",],
+      love: ["Люблю тебя бесконечно сильно, солнце", "Ооооочень сильно тебя люблю", "Безумно люблю тебя, зайка", "Люблю тебя безумно сильно", "Сильно сильно тебя люблю", "Очень очень очень очень очень очень сильно тебя люблю моя прелесть!", "Люблю тебя, солнышко"],
+      morning: ["Доброе утро, солнце!", "Доброе утречко, зайка", "Хорошего тебе дня, солнышко", "Добренькое утро, любимая", "Доброе утро моя маленькая"],
+      night: ["Сладких снов, солнышко", "Надеюсь тебе приснимся мы рядом", "Сладеньких снов, принцесска", "Спи спокойно, зайка", "Сладких снов, люблю тебя <3 "],
+      pleasant: ["Ты самая лучшая, зайка, всегда знай это", "Я люблю тебя всегда, абсолютно всегда", "Твоё тепло греет меня всегда", "Ты безумно красивая, зайка", "Твои глаза словно космос", "Если бы сажали за красоту ты бы уже сидела", "При виде тебя поднимается настроение", "После сообщения от тебя, я снова становлюсь маленьким ребёнком", "Ты моя прелесть", "Обнимаю тебя моя маленькая", "1000 виртуальных поцелуев для моей принцессы 😘", "Самого хорошего дня тебе любимая", "Радость моя"]
+    };
+
+    let startDate, dembelDate;
+    let debugDays = 0;
+    const lastMsgHistory = {};
+
+    function mulberry32(a) {
+      return function () {
+        var t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      }
+    }
+
+    function shuffleWithSeed(array, seed) {
+      const rng = mulberry32(seed);
+      let currentIndex = array.length, randomIndex;
+      while (currentIndex != 0) {
+        randomIndex = Math.floor(rng() * currentIndex);
+        currentIndex--;
+        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+      }
+      return array;
+    }
+
+    function init() {
+      const savedStart = localStorage.getItem('armyStartDate');
+      const savedEnd = localStorage.getItem('armyEndDate');
+      const savedDebug = localStorage.getItem('debugOffset');
+      const savedTestDate = localStorage.getItem('testSeasonDate');
+
+      if (savedDebug) {
+        debugDays = parseInt(savedDebug);
+        document.getElementById('debugOffset').value = debugDays;
+      }
+
+      if (savedTestDate) {
+        manualSeasonDate = savedTestDate;
+        document.getElementById('testSeasonDate').value = savedTestDate;
+      }
+
+      if (savedStart && savedEnd) {
+        startDate = new Date(savedStart);
+        startDate.setHours(0, 0, 0, 0);
+        dembelDate = new Date(savedEnd);
+        dembelDate.setHours(0, 0, 0, 0);
+        document.getElementById('setupScreen').style.display = 'none';
+        document.getElementById('appContent').classList.remove('blurred');
+        startApp();
+      } else {
+        document.getElementById('setupScreen').style.display = 'flex';
+        document.getElementById('appContent').classList.add('blurred');
+        initPickers();
+      }
+    }
+
+    function saveDatesAndStart() {
+      const startVal = getPickerDate('start');
+      const endVal = getPickerDate('end');
+      if (!startVal || !endVal) { alert("Ошибка выбора дат!"); return; }
+      startDate = startVal; startDate.setHours(0, 0, 0, 0);
+      dembelDate = endVal; dembelDate.setHours(0, 0, 0, 0);
+      localStorage.setItem('armyStartDate', startDate.toISOString().split('T')[0]);
+      localStorage.setItem('armyEndDate', dembelDate.toISOString().split('T')[0]);
+      document.getElementById('setupScreen').style.display = 'none';
+      document.getElementById('appContent').classList.remove('blurred');
+      startApp();
+    }
+
+    function startApp() {
+      setRandomGreeting();
+      updateDailyCard();
+      updateDembelTimer();
+      setInterval(updateDembelTimer, 60000);
+      setInterval(updateMidnightTimer, 1000);
+    }
+
+    const heartBtn = document.getElementById('heartBtn');
+    const heartAudio = document.getElementById('heartAudio');
+    try { heartAudio.volume = 1.0; } catch (e) { }
+
+    let isPlaying = false;
+    heartBtn.addEventListener('click', () => {
+      if (!isPlaying) {
+        heartBtn.classList.add('beating');
+        isPlaying = true;
+        heartAudio.play().catch(e => console.log("Audio error"));
+      } else {
+        heartBtn.classList.remove('beating');
+        isPlaying = false;
+        heartAudio.pause();
+      }
+    });
+
+    function updateDailyCard() {
+      const now = new Date(); now.setHours(0, 0, 0, 0);
+      let realDiff = Math.floor((now - startDate) / (1000 * 60 * 60 * 24)) + 1;
+      if (realDiff < 1) realDiff = 1;
+      const totalDays = realDiff + debugDays;
+      document.getElementById('cardDateLabel').innerText = `ДЕНЬ СЛУЖБЫ: ${totalDays}`;
+
+      let item;
+      if (totalDays <= 31) {
+        const index = (totalDays - 1) % dailyContent.length;
+        item = dailyContent[index];
+      } else {
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        const dayOfMonth = now.getDate();
+        const daysInThisMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+        const seed = currentYear * 100 + (currentMonth + 1);
+        let monthlyPhrases = dailyContent.slice(0, daysInThisMonth);
+        monthlyPhrases = shuffleWithSeed(monthlyPhrases, seed);
+        item = monthlyPhrases[dayOfMonth - 1];
+      }
+
+      const cardBody = document.getElementById('cardBody');
+      cardBody.style.opacity = 0;
+      setTimeout(() => {
+        if (item && item.type === 'img') {
+          cardBody.innerHTML = `<img src="${item.src}" class="card-img"><p>${item.content}</p>`;
+        } else if (item) {
+          cardBody.innerHTML = `<p>"${item.content}"</p>`;
+        } else {
+          cardBody.innerHTML = "<p>Сообщение не найдено</p>";
+        }
+        cardBody.style.opacity = 1;
+      }, 300);
+      updateMidnightTimer();
+    }
+
+    function updateMidnightTimer() {
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      const diff = tomorrow - now;
+      const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((diff % (1000 * 60)) / 1000);
+      document.getElementById('nextUpdateTimer').innerText = `Новое послание через: ${h}ч ${m}м ${s}с`;
+    }
+
+    function showQuickMsg(type) {
+      const list = quickMsgs[type];
+      let msg;
+      if (list.length === 1) { msg = list[0]; }
+      else {
+        do { msg = list[Math.floor(Math.random() * list.length)]; }
+        while (msg === lastMsgHistory[type]);
+      }
+      lastMsgHistory[type] = msg;
+      const textEl = document.getElementById('quickMsgText');
+      textEl.classList.remove('visible');
+      setTimeout(() => {
+        textEl.innerText = msg;
+        textEl.classList.add('visible');
+      }, 500);
+    }
+
+    function updateDembelTimer() {
+      const now = new Date();
+      let adjustedDembel = new Date(dembelDate);
+      adjustedDembel.setDate(adjustedDembel.getDate() - debugDays);
+      const diff = adjustedDembel - now;
+      if (diff <= 0) { document.getElementById('countdown').innerText = "МЫ ДОМА! ❤️"; return; }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      document.getElementById('countdown').innerText = `${days} дн. ${hours} ч.`;
+    }
+
+    function openSettings() { document.getElementById('settingsModal').classList.add('active'); }
+    function closeSettings() { document.getElementById('settingsModal').classList.remove('active'); }
+    function openSystemMenu() { document.getElementById('systemModal').classList.add('active'); }
+    function closeSystemMenu() { document.getElementById('systemModal').classList.remove('active'); }
+    function openInfoFromSettings() {
+      closeSettings();
+      setTimeout(() => { document.getElementById('infoModal').classList.add('active'); }, 300);
+    }
+    function closeInfo() { document.getElementById('infoModal').classList.remove('active'); }
+    function updateDebugMode() {
+      const val = parseInt(document.getElementById('debugOffset').value) || 0;
+      debugDays = val;
+      localStorage.setItem('debugOffset', val);
+      updateDailyCard();
+      updateDembelTimer();
+    }
+
+    function applyTestSeason() {
+      const val = document.getElementById('testSeasonDate').value;
+      if (val) {
+        manualSeasonDate = val;
+        localStorage.setItem('testSeasonDate', val);
+      } else {
+        manualSeasonDate = null;
+        localStorage.removeItem('testSeasonDate');
+      }
+    }
+
+    function resetDates() {
+      if (confirm("Сбросить все даты?")) {
+        localStorage.removeItem('armyStartDate');
+        localStorage.removeItem('armyEndDate');
+        location.reload();
+      }
+    }
+    function setRandomGreeting() {
+      const greetingElement = document.getElementById('greetingText');
+      const randomIndex = Math.floor(Math.random() * greetings.length);
+      greetingElement.innerText = greetings[randomIndex];
+    }
+
+    let textFadeTimer;
+
+    function toggleInterface(event) {
+      event.stopPropagation();
+      const isHidden = document.body.classList.toggle('ui-hidden');
+      document.body.classList.remove('text-faded');
+      clearTimeout(textFadeTimer);
+
+      if (isHidden) {
+        textFadeTimer = setTimeout(() => {
+          document.body.classList.add('text-faded');
+        }, 20000);
+      }
+
+      updateGroundLeavesPosition();
+    }
+
+    document.addEventListener('click', function (event) {
+      if (document.body.classList.contains('ui-hidden')) {
+        if (!event.target.closest('.modal-overlay')) {
+          document.body.classList.remove('ui-hidden');
+          document.body.classList.remove('text-faded');
+          clearTimeout(textFadeTimer);
+          updateGroundLeavesPosition();
+        }
+      }
+    });
+
+    init();
+
+
+    // --- НАСТРОЙКИ МУЗЫКИ ---
+    const bgMusic = document.getElementById('bgMusic');
+    // Укажи здесь названия своих файлов
+    const playlist = ["music1.mp3", "music2.mp3", "music3.mp3"];
+    let currentTrackIndex = 0;
+    let isMusicInitialized = false; // Чтобы знать, включали ли уже
+
+    // Функция переключения трека
+    function playNextTrack() {
+      currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
+      bgMusic.src = playlist[currentTrackIndex];
+      bgMusic.play();
+    }
+
+    // Слушаем окончание трека
+    bgMusic.addEventListener('ended', playNextTrack);
+
+    // --- ОБНОВЛЕННАЯ ФУНКЦИЯ СКРЫТИЯ ИНТЕРФЕЙСА ---
+    function toggleInterface(event) {
+      if (event) event.stopPropagation();
+
+      const isHidden = document.body.classList.toggle('ui-hidden');
+      document.body.classList.remove('text-faded');
+      clearTimeout(textFadeTimer);
+
+      if (isHidden) {
+        // --- ИНТЕРФЕЙС СКРЫТ -> ВКЛЮЧАЕМ МУЗЫКУ ---
+
+        // Запускаем таймер исчезновения текста
+        textFadeTimer = setTimeout(() => {
+          document.body.classList.add('text-faded');
+        }, 20000);
+
+        // Логика музыки
+        if (!isMusicInitialized) {
+          // Если музыка еще ни разу не играла, запускаем первый трек
+          bgMusic.volume = 0.5; // Громкость 50%
+          bgMusic.src = playlist[0];
+          bgMusic.play().catch(e => console.log("Автозапуск заблокирован браузером"));
+          isMusicInitialized = true;
+        } else {
+          // Если уже играли, просто возобновляем (если была на паузе)
+          if (bgMusic.paused) bgMusic.play();
         }
 
-        function updateMidnightTimer() {
-            const now = new Date();
-            const tomorrow = new Date(now);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            tomorrow.setHours(0, 0, 0, 0);
-            const diff = tomorrow - now;
-            const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const s = Math.floor((diff % (1000 * 60)) / 1000);
-            document.getElementById('nextUpdateTimer').innerText = `Новое послание через: ${h}ч ${m}м ${s}с`;
-        }
+      } else {
+        // --- ИНТЕРФЕЙС ПОКАЗАН -> ВЫКЛЮЧАЕМ МУЗЫКУ ---
 
-        // --- БЫСТРЫЕ СООБЩЕНИЯ ---
-        function showQuickMsg(type) {
-            const list = quickMsgs[type];
-            const msg = list[Math.floor(Math.random() * list.length)];
+        // Возвращаем текст
+        document.body.classList.remove('text-faded');
+        clearTimeout(textFadeTimer);
 
-            const container = document.getElementById('quickMsgArea');
-            const textEl = document.getElementById('quickMsgText');
+        // Ставим музыку на паузу
+        bgMusic.pause();
+      }
 
-            textEl.classList.remove('visible');
-
-            setTimeout(() => {
-                textEl.innerText = msg;
-                textEl.classList.add('visible');
-            }, 500);
-        }
-
-        // --- ТАЙМЕР ДО ДОМУ ---
-        function updateDembelTimer() {
-            const now = new Date();
-            const diff = dembelDate - now;
-            if (diff <= 0) { document.getElementById('countdown').innerText = "МЫ ДОМА! ❤️"; return; }
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            document.getElementById('countdown').innerText = `${days} дн. ${hours} ч.`;
-        }
-
-        // --- УПРАВЛЕНИЕ МЕНЮ ---
-        function openSettings() { document.getElementById('settingsModal').classList.add('active'); }
-        function closeSettings() { document.getElementById('settingsModal').classList.remove('active'); }
-
-        function openSystemMenu() {
-            document.getElementById('systemModal').classList.add('active');
-        }
-        function closeSystemMenu() {
-            document.getElementById('systemModal').classList.remove('active');
-        }
-
-        function openInfoFromSettings() {
-            closeSettings();
-            setTimeout(() => { document.getElementById('infoModal').classList.add('active'); }, 300);
-        }
-        function closeInfo() { document.getElementById('infoModal').classList.remove('active'); }
-
-        function updateDebugMode() {
-            const val = parseInt(document.getElementById('debugOffset').value) || 0;
-            debugDays = val;
-            localStorage.setItem('debugOffset', val);
-            updateDailyCard();
-        }
-
-        function resetDates() {
-            if (confirm("Сбросить все даты?")) {
-                localStorage.removeItem('armyStartDate');
-                localStorage.removeItem('armyEndDate');
-                location.reload();
-            }
-        }
-
-        function setRandomGreeting() {
-            const greetingElement = document.getElementById('greetingText');
-            const randomIndex = Math.floor(Math.random() * greetings.length);
-            greetingElement.innerText = greetings[randomIndex];
-        }
-
-        // Запуск
-        init();
-    </script>
+      updateGroundLeavesPosition();
+    }
+  </script>
 </body>
 
 </html>
