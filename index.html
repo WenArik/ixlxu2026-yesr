@@ -23,7 +23,11 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* СЛОЙ ДЕРЕВА (ФОН - СТВОЛ И ВЕТКИ) */
+    canvas {
+      will-change: transform;
+      transform: translateZ(0);
+    }
+
     #treeCanvas {
       position: fixed;
       top: 0;
@@ -36,7 +40,6 @@
       transition: opacity 0.5s ease;
     }
 
-    /* СЛОЙ ДЛЯ ПАДАЮЩИХ ЭЛЕМЕНТОВ И СУГРОБА */
     #frontCanvas {
       position: fixed;
       top: 0;
@@ -44,7 +47,6 @@
       width: 100%;
       height: 100%;
       z-index: 51;
-      /* ВЫШЕ ТАЙМЕРА (50), НИЖЕ КАРТОЧКИ (70) */
       pointer-events: none;
     }
 
@@ -183,6 +185,7 @@
       animation: heartbeat 1.2s infinite;
       color: #ff4d4d;
       border-color: #ff4d4d;
+      background: rgba(60, 20, 20, 0.8);
     }
 
     .main-container {
@@ -209,14 +212,10 @@
       text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
     }
 
-    /* --- ВАЖНОЕ ИЗМЕНЕНИЕ ЗДЕСЬ --- */
     .daily-card {
       position: relative;
-      /* ОБЯЗАТЕЛЬНО для работы z-index */
       z-index: 70;
-      /* ТЕПЕРЬ ОНА ВЫШЕ ЛИСТЬЕВ (60) */
-      background: rgba(30, 30, 30, 0.75);
-      backdrop-filter: blur(2px);
+      background: rgba(30, 30, 30, 0.9);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 20px;
       padding: 25px 20px;
@@ -261,7 +260,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      /* У этого блока нет z-index, он ниже frontCanvas (60) */
     }
 
     .quick-msg-text {
@@ -285,12 +283,10 @@
       flex-wrap: wrap;
       gap: 12px;
       width: 100%;
-      /* Кнопки тоже ниже frontCanvas (60), листья падают ПОВЕРХ них */
     }
 
     .btn-action {
-      background: rgba(30, 30, 30, 0.6);
-      backdrop-filter: blur(2px);
+      background: rgba(30, 30, 30, 0.7);
       border: 1px solid #444;
       color: #ccc;
       padding: 10px 5px;
@@ -322,8 +318,7 @@
       bottom: 0;
       left: 0;
       width: 100%;
-      background: rgba(18, 18, 18, 0.85);
-      backdrop-filter: blur(10px);
+      background: rgba(18, 18, 18, 0.95);
       border-top: 1px solid #333;
       padding-bottom: max(20px, env(safe-area-inset-bottom));
       padding-top: 15px;
@@ -342,7 +337,6 @@
       margin-top: 5px;
     }
 
-    /* --- МОДАЛКИ И НАСТРОЙКИ --- */
     #setupScreen {
       position: fixed;
       top: 0;
@@ -630,18 +624,17 @@
 </head>
 
 <body>
-
-  <!-- ФОНОВАЯ МУЗЫКА -->
-  <audio id="bgMusic">
-    <source src="music1.mp3" type="audio/mpeg">
-    <source src="music2.mp3" type="audio/mpeg">
-    <source src="music3.mp3" type="audio/mpeg">
+  <audio id="rainAudio" loop>
+    <source src="rain.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="menuClickSound">
+    <source src="menu_click.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="uiClickSound">
+    <source src="ui_click.mp3" type="audio/mpeg">
   </audio>
 
-  <!-- ХОЛСТ ДЛЯ ДЕРЕВА (ФОН) -->
   <canvas id="treeCanvas"></canvas>
-
-  <!-- ХОЛСТ ДЛЯ ПЕРЕДНЕГО ПЛАНА (ЛИСТЬЯ/СНЕГ) -->
   <canvas id="frontCanvas"></canvas>
 
   <div class="silent-header">это дерево - показатель нашей любви</div>
@@ -657,24 +650,19 @@
       <button onclick="openSettings()" class="corner-btn">⚙️</button>
       <button onclick="toggleInterface(event)" class="corner-btn">👁️</button>
     </div>
-    <button id="heartBtn" class="corner-btn">❤️</button>
+    <button id="heartBtn" class="corner-btn heart-btn">❤️</button>
   </div>
 
   <div id="appContent" class="main-container">
     <h1 id="greetingText">Загрузка...</h1>
-
-    <!-- Карточка (z-index: 70) теперь выше листьев (z-index: 60) -->
     <div class="daily-card">
       <div class="card-date" id="cardDateLabel">ДЕНЬ СЛУЖБЫ: --</div>
       <div id="cardBody" class="card-content">Загрузка...</div>
       <div class="refresh-timer" id="nextUpdateTimer">Обновление через: --:--:--</div>
     </div>
-
     <div id="quickMsgArea">
       <div id="quickMsgText" class="quick-msg-text"></div>
     </div>
-
-    <!-- Кнопки (z-index: auto) ниже листьев (z-index: 60) -->
     <div class="menu-grid">
       <button onclick="showQuickMsg('love')" class="btn-action"><span class="btn-icon">💌</span>Любовь</button>
       <button onclick="showQuickMsg('support')" class="btn-action"><span class="btn-icon">🤝</span>Поддержка</button>
@@ -684,12 +672,8 @@
     </div>
   </div>
 
-  <div class="timer-box">
-    До встречи осталось:
-    <span id="countdown" class="timer-val">Загрузка...</span>
-  </div>
+  <div class="timer-box">До встречи осталось:<span id="countdown" class="timer-val">Загрузка...</span></div>
 
-  <!-- ЭКРАН НАСТРОЙКИ -->
   <div id="setupScreen">
     <div class="setup-header">
       <h1>Начало пути</h1>
@@ -716,7 +700,6 @@
     <button onclick="saveDatesAndStart()" class="start-btn">Начать службу</button>
   </div>
 
-  <!-- МЕНЮ -->
   <div id="settingsModal" class="modal-overlay">
     <div class="modal-box">
       <div class="settings-title">Меню</div>
@@ -732,9 +715,8 @@
       <div class="system-grid">
         <div class="sys-box">
           <div class="sys-box-title">Время (дни)</div>
-          <div class="sys-box-content">
-            <input type="number" id="debugOffset" value="0" onchange="updateDebugMode()" class="sys-input-mini">
-          </div>
+          <div class="sys-box-content"><input type="number" id="debugOffset" value="0" onchange="updateDebugMode()"
+              class="sys-input-mini"></div>
           <button onclick="updateDebugMode()" class="sys-btn-mini btn-mini-primary">Применить</button>
         </div>
         <div class="sys-box">
@@ -743,16 +725,12 @@
           <button onclick="resetDates()" class="sys-btn-mini btn-mini-danger">RESET</button>
         </div>
       </div>
-
-      <!-- ТЕСТ СЕЗОНА -->
       <div class="sys-box" style="height: auto; margin-bottom: 15px;">
         <div class="sys-box-title">Тест сезона (ГГГГ-ММ-ДД)</div>
-        <div class="sys-box-content">
-          <input type="text" id="testSeasonDate" placeholder="Напр: 2026-04-25" class="sys-input-mini">
-        </div>
+        <div class="sys-box-content"><input type="text" id="testSeasonDate" placeholder="Напр: 2026-05-10"
+            class="sys-input-mini"></div>
         <button onclick="applyTestSeason()" class="sys-btn-mini btn-mini-primary">Установить дату</button>
       </div>
-
       <button onclick="closeSystemMenu()" class="btn-setting btn-close">Назад</button>
     </div>
   </div>
@@ -775,12 +753,13 @@
   </div>
 
   <script>
-    // ==========================================
-    // ЧАСТЬ 1: ЛОГИКА ДЕРЕВА И СЕЗОНОВ
-    // ==========================================
+    const MUSIC_VOLUME_TARGET = 0.7;
+    const RAIN_VOLUME_TARGET = 0.6;
+    const MENU_CLICK_VOLUME = 0.8;
+    const UI_CLICK_VOLUME = 0.3;
+
     const treeCanvas = document.getElementById('treeCanvas');
     const tCtx = treeCanvas.getContext('2d', { alpha: true });
-
     const frontCanvas = document.getElementById('frontCanvas');
     const fCtx = frontCanvas.getContext('2d', { alpha: true });
 
@@ -789,29 +768,35 @@
     const frameInterval = 1000 / targetFPS;
     let lastTreeTime = 0;
     let isTreeVisible = true;
+    let animationFrameId;
+
+    // Оффскрин-холст для кэширования статики
+    const offscreenCanvas = document.createElement('canvas');
+    const oCtx = offscreenCanvas.getContext('2d');
 
     const heartScaleRatio = 0.6;
     const heartCenterYRatio = 0.5;
-
     const fallingLimit = 50;
 
     let sakuraSprite, oakLeafSprite, snowflakeSprite;
 
+    // Данные дерева теперь глобальные и будут сохраняться
     let branches = [];
     let sakuraPuffs = [], oakPuffs = [];
     let sakuraFlowers = [], oakLeaves = [];
     let groundLeaves = [];
     let snowOnBranches = [];
+
     let fallingElements = [];
+    let rainDrops = [];
+    let splashes = [];
+    let isRainyDay = false;
 
     let currentSeasonParams = {
       leafColorR: 255, leafColorG: 182, leafColorB: 193,
       oakColorR: 76, oakColorG: 175, oakColorB: 80,
-      foliageDensity: 1.0,
-      snowAmount: 0,
-      groundSnowHeight: 0,
-      isSnowing: false,
-      fallRate: 0.05
+      foliageDensity: 1.0, snowAmount: 0, groundSnowHeight: 0,
+      isSnowing: false, fallRate: 0.05
     };
 
     let manualSeasonDate = null;
@@ -819,18 +804,21 @@
     function initTree() {
       createSprites();
       resizeTree();
-      window.addEventListener('resize', resizeTree);
+      window.addEventListener('resize', () => {
+        clearTimeout(window.resizeTimer);
+        window.resizeTimer = setTimeout(resizeTree, 200);
+      });
 
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
           isTreeVisible = false;
+          cancelAnimationFrame(animationFrameId);
         } else {
           isTreeVisible = true;
           lastTreeTime = performance.now();
           animateTree(lastTreeTime);
         }
       });
-
       animateTree(0);
     }
 
@@ -838,85 +826,110 @@
       sakuraSprite = document.createElement('canvas');
       sakuraSprite.width = 10; sakuraSprite.height = 10;
       let sCtx = sakuraSprite.getContext('2d');
-      sCtx.fillStyle = '#ffb6c1';
-      sCtx.translate(5, 5);
-      for (let i = 0; i < 5; i++) {
-        sCtx.beginPath(); sCtx.arc(0, -2, 2, 0, Math.PI * 2); sCtx.fill();
-        sCtx.rotate(Math.PI * 2 / 5);
-      }
+      sCtx.fillStyle = '#ffb6c1'; sCtx.translate(5, 5);
+      for (let i = 0; i < 5; i++) { sCtx.beginPath(); sCtx.arc(0, -2, 2, 0, Math.PI * 2); sCtx.fill(); sCtx.rotate(Math.PI * 2 / 5); }
       sCtx.setTransform(1, 0, 0, 1, 0, 0);
 
       oakLeafSprite = document.createElement('canvas');
       oakLeafSprite.width = 10; oakLeafSprite.height = 10;
       let oCtx = oakLeafSprite.getContext('2d');
-      oCtx.fillStyle = '#4caf50';
-      oCtx.translate(5, 5);
+      oCtx.fillStyle = '#4caf50'; oCtx.translate(5, 5);
       oCtx.beginPath(); oCtx.ellipse(0, 0, 4, 2, 0, 0, Math.PI * 2); oCtx.fill();
       oCtx.setTransform(1, 0, 0, 1, 0, 0);
 
       snowflakeSprite = document.createElement('canvas');
       snowflakeSprite.width = 8; snowflakeSprite.height = 8;
       let snCtx = snowflakeSprite.getContext('2d');
-      snCtx.fillStyle = '#ffffff';
-      snCtx.beginPath(); snCtx.arc(4, 4, 2, 0, Math.PI * 2); snCtx.fill();
+      snCtx.fillStyle = '#ffffff'; snCtx.beginPath(); snCtx.arc(4, 4, 2, 0, Math.PI * 2); snCtx.fill();
     }
 
+    // === НОВАЯ ЛОГИКА СОХРАНЕНИЯ/ЗАГРУЗКИ ДЕРЕВА ===
     function resizeTree() {
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = 1.5;
       const rect = treeCanvas.getBoundingClientRect();
 
       [treeCanvas, frontCanvas].forEach(canvas => {
         canvas.width = rect.width * dpr;
         canvas.height = rect.height * dpr;
-        canvas.getContext('2d').scale(dpr, dpr);
-        canvas.getContext('2d').imageSmoothingEnabled = true;
-        canvas.getContext('2d').imageSmoothingQuality = 'high';
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'medium';
       });
+
+      offscreenCanvas.width = treeCanvas.width;
+      offscreenCanvas.height = treeCanvas.height;
+      oCtx.scale(dpr, dpr);
 
       treeWidth = rect.width;
       treeHeight = rect.height;
 
+      // Пытаемся загрузить дерево из памяти
+      const savedTree = localStorage.getItem('savedTreeData');
+
+      if (savedTree) {
+        try {
+          const data = JSON.parse(savedTree);
+          branches = data.branches;
+          sakuraPuffs = data.sakuraPuffs;
+          oakPuffs = data.oakPuffs;
+          sakuraFlowers = data.sakuraFlowers;
+          oakLeaves = data.oakLeaves;
+          snowOnBranches = data.snowOnBranches;
+          generateGroundLeaves(); // Земляные листья можно перегенерировать, они не так важны
+        } catch (e) {
+          console.log("Ошибка загрузки дерева, генерируем новое");
+          generateNewTreeStructure();
+        }
+      } else {
+        generateNewTreeStructure();
+      }
+
+      updateSeasonParams(0);
+      drawTreeStaticToBuffer();
+    }
+
+    function generateNewTreeStructure() {
       generateTreeStructure();
       loadFoliageFromCache();
+      // Сохраняем структуру в память
+      const treeData = {
+        branches: branches,
+        sakuraPuffs: sakuraPuffs,
+        oakPuffs: oakPuffs,
+        sakuraFlowers: sakuraFlowers,
+        oakLeaves: oakLeaves,
+        snowOnBranches: snowOnBranches
+      };
+      try {
+        localStorage.setItem('savedTreeData', JSON.stringify(treeData));
+      } catch (e) {
+        console.log("Память переполнена, дерево не сохранится навсегда");
+      }
     }
 
     function isInsideHeart(x, y, cx, cy, scale) {
-      let nx = (x - cx) / scale;
-      let ny = -(y - cy) / scale;
+      let nx = (x - cx) / scale; let ny = -(y - cy) / scale;
       return Math.pow(nx * nx + ny * ny - 1, 3) - (nx * nx * Math.pow(ny, 3)) <= 0;
     }
 
     function generateTreeStructure() {
       branches = [];
       const cx = treeWidth / 2;
-      const groundY = treeHeight;
       const hCy = treeHeight * heartCenterYRatio;
       const scale = Math.min(treeWidth, treeHeight) * heartScaleRatio;
-
       const heartCy = hCy;
       const trunkTopY = heartCy + (scale * 0.8);
-      const trunkBottomY = groundY;
+      const trunkBottomY = treeHeight;
 
-      branches.push({
-        x1: cx - treeWidth * 0.03, y1: trunkBottomY,
-        x2: cx + treeWidth * 0.03, y2: trunkBottomY,
-        x3: cx + treeWidth * 0.02, y3: trunkTopY,
-        x4: cx - treeWidth * 0.02, y4: trunkTopY,
-        isTrunk: true, length: treeHeight * 0.25
-      });
+      branches.push({ x1: cx - treeWidth * 0.03, y1: trunkBottomY, x2: cx + treeWidth * 0.03, y2: trunkBottomY, x3: cx + treeWidth * 0.02, y3: trunkTopY, x4: cx - treeWidth * 0.02, y4: trunkTopY, isTrunk: true, length: treeHeight * 0.25 });
 
       function createBranch(sx, sy, angle, len, depth, side) {
         if (depth <= 0 || len < 5) return;
-
-        const ex = sx + Math.cos(angle) * len;
-        const ey = sy + Math.sin(angle) * len;
-
+        const ex = sx + Math.cos(angle) * len; const ey = sy + Math.sin(angle) * len;
         if (!isInsideHeart(ex, ey, cx, heartCy, scale)) return;
-
         branches.push({ x1: sx, y1: sy, x2: ex, y2: ey, w: Math.max(1, depth * 1.5), isTrunk: false, length: len, side: side });
-
         const subLen = len * 0.75;
-
         if (side === 'center') {
           createBranch(ex, ey, angle - 0.6, subLen, depth - 1, 'left');
           createBranch(ex, ey, angle, subLen, depth - 1, 'center');
@@ -929,20 +942,16 @@
           createBranch(ex, ey, angle - 0.4, subLen, depth - 1, 'center');
         }
       }
-
       const mLen = scale * 0.35;
       createBranch(cx, trunkTopY, -Math.PI / 2, mLen, 8, 'center');
       createBranch(cx, trunkTopY, -Math.PI / 2 - 1.0, mLen * 0.9, 7, 'left');
       createBranch(cx, trunkTopY, -Math.PI / 2 + 1.0, mLen * 0.9, 7, 'right');
     }
 
-    function loadFoliageFromCache() {
-      generateFoliage(false);
-    }
+    function loadFoliageFromCache() { generateFoliage(false); }
 
     function generateFoliage(saveToCache = false) {
-      sakuraPuffs = []; oakPuffs = []; sakuraFlowers = []; oakLeaves = [];
-      snowOnBranches = [];
+      sakuraPuffs = []; oakPuffs = []; sakuraFlowers = []; oakLeaves = []; snowOnBranches = [];
       const cx = treeWidth / 2;
       const hCy = treeHeight * heartCenterYRatio;
       const scale = Math.min(treeWidth, treeHeight) * heartScaleRatio;
@@ -950,11 +959,9 @@
       branches.forEach(branch => {
         if (branch.isTrunk) return;
         const isTip = branch.length < scale * 0.15;
-
         if (isTip) {
           const puffDensity = 40;
           const numPuffs = Math.floor(branch.length / puffDensity);
-
           for (let k = 0; k < numPuffs; k++) {
             const t = Math.random();
             const px = branch.x1 + (branch.x2 - branch.x1) * t;
@@ -963,7 +970,6 @@
             const len = Math.sqrt(dx * dx + dy * dy);
             const nx = -dy / len; const ny = dx / len;
             const offset = (Math.random() - 0.5) * 20;
-
             if (branch.side === 'left' || branch.side === 'center') {
               sakuraPuffs.push({ x: px + nx * offset, y: py + ny * offset, radius: 15 + Math.random() * 5 });
             } else {
@@ -986,7 +992,6 @@
         if (branch.isTrunk) return;
         const side = branch.side;
         const totalCount = (side === 'center') ? 300 : ((side === 'left') ? 400 : 400);
-
         let totalLenRef = 0;
         if (side === 'left') totalLenRef = totalLeft;
         else if (side === 'right') totalLenRef = totalRight;
@@ -994,7 +999,6 @@
 
         const count = Math.ceil((branch.length / totalLenRef) * totalCount);
         const arr = (side === 'right') ? oakLeaves : sakuraFlowers;
-
         const dx = branch.x2 - branch.x1; const dy = branch.y2 - branch.y1;
         const len = Math.sqrt(dx * dx + dy * dy);
         const nx = -dy / len; const ny = dx / len;
@@ -1005,7 +1009,6 @@
           const sp = (Math.random() - 0.5) * 25;
           arr.push({ x: fx + nx * sp, y: fy + ny * sp, rot: Math.random() * Math.PI * 2, size: 0.5 + Math.random() * 0.5 });
         }
-
         for (let i = 0; i < count / 2; i++) {
           const t = Math.random();
           const fx = branch.x1 + dx * t; const fy = branch.y1 + dy * t;
@@ -1013,142 +1016,127 @@
           snowOnBranches.push({ x: fx + nx * sp, y: fy + ny * sp, size: 1 + Math.random() * 2 });
         }
       });
-
       generateGroundLeaves();
     }
 
     function generateGroundLeaves() {
       groundLeaves = [];
-      const timerBoxHeight = 0;
       const groundCount = 200;
-
       for (let i = 0; i < groundCount; i++) {
         const gx = (Math.random() - 0.5) * treeWidth * 0.9 + (treeWidth / 2);
-        const gy = (treeHeight - timerBoxHeight) - Math.random() * 7;
+        const gy = treeHeight - Math.random() * 7;
         const isSakura = Math.random() > 0.3;
-
-        groundLeaves.push({
-          x: gx, y: gy,
-          rot: Math.random() * Math.PI * 2,
-          size: 0.6 + Math.random() * 0.6,
-          type: isSakura ? 'sakura' : 'oak'
-        });
+        groundLeaves.push({ x: gx, y: gy, rot: Math.random() * Math.PI * 2, size: 0.6 + Math.random() * 0.6, type: isSakura ? 'sakura' : 'oak' });
       }
     }
 
-    function updateGroundLeavesPosition() {
-      generateGroundLeaves();
+    function updateGroundLeavesPosition() { generateGroundLeaves(); }
+
+    function checkRainCondition() {
+      let now = new Date();
+      if (manualSeasonDate) now = new Date(manualSeasonDate);
+      const month = now.getMonth();
+      const day = now.getDate();
+      const isSummerOrAutumn = (month >= 5 && month <= 10);
+      const isTenthDay = (day % 10 === 0);
+      const wasRainy = isRainyDay;
+      isRainyDay = isSummerOrAutumn && isTenthDay;
+
+      if (wasRainy !== isRainyDay) {
+        const rainAudio = document.getElementById('rainAudio');
+        if (rainAudio) {
+          if (isRainyDay) {
+            rainAudio.volume = RAIN_VOLUME_TARGET;
+            rainAudio.play().catch(e => console.log("Auto-play blocked"));
+          } else {
+            rainAudio.pause();
+            rainAudio.currentTime = 0;
+          }
+        }
+      }
     }
 
     function updateSeasonParams(dt) {
       let now = new Date();
       if (manualSeasonDate) now = new Date(manualSeasonDate);
-
       const month = now.getMonth();
       const day = now.getDate();
 
       let targetParams = {
         density: 1, snow: 0, groundH: 0, snowing: false, rate: 0.05,
-        lR: 255, lG: 182, lB: 193,
-        oR: 76, oG: 175, oB: 80
+        lR: 255, lG: 182, lB: 193, oR: 76, oG: 175, oB: 80
       };
 
       if (month === 11 || month === 0 || month === 1) {
-        targetParams.density = 0;
-        targetParams.snow = 1;
-        targetParams.groundH = 40;
-        targetParams.snowing = true;
-        targetParams.rate = 0.2;
+        targetParams.density = 0; targetParams.snow = 1; targetParams.groundH = 40;
+        targetParams.snowing = true; targetParams.rate = 0.2;
       } else if (month === 2 || month === 3 || month === 4) {
         let progress = (month - 2) + (day / 30);
-        targetParams.density = progress;
-        targetParams.snow = 1 - progress;
-        targetParams.groundH = 40 * (1 - progress);
-        targetParams.snowing = progress < 0.3;
-        targetParams.rate = 0.05;
+        targetParams.density = progress; targetParams.snow = 1 - progress;
+        targetParams.groundH = 40 * (1 - progress); targetParams.snowing = progress < 0.3; targetParams.rate = 0.05;
       } else if (month === 5 || month === 6 || month === 7) {
-        targetParams.density = 1;
-        targetParams.snow = 0;
-        targetParams.groundH = 0;
-        targetParams.snowing = false;
-        targetParams.rate = 0.02;
+        targetParams.density = 1; targetParams.snow = 0; targetParams.groundH = 0;
+        targetParams.snowing = false; targetParams.rate = 0.02;
       } else {
         let progress = (month - 8) + (day / 30);
-        targetParams.density = 1 - (progress * 0.8);
-        targetParams.snow = 0;
-        targetParams.groundH = 0;
-        targetParams.snowing = false;
-        targetParams.rate = 0.1 + (progress * 0.1);
-
+        targetParams.density = 1 - (progress * 0.8); targetParams.snow = 0; targetParams.groundH = 0;
+        targetParams.snowing = false; targetParams.rate = 0.1 + (progress * 0.1);
         targetParams.lR = 255; targetParams.lG = 165; targetParams.lB = 0;
         targetParams.oR = 218; targetParams.oG = 165; targetParams.oB = 32;
       }
 
       const smooth = 0.05;
-
       currentSeasonParams.foliageDensity = lerp(currentSeasonParams.foliageDensity, targetParams.density, smooth);
       currentSeasonParams.snowAmount = lerp(currentSeasonParams.snowAmount, targetParams.snow, smooth);
       currentSeasonParams.groundSnowHeight = lerp(currentSeasonParams.groundSnowHeight, targetParams.groundH, smooth);
       currentSeasonParams.isSnowing = targetParams.snowing;
       currentSeasonParams.fallRate = lerp(currentSeasonParams.fallRate, targetParams.rate, smooth);
-
       currentSeasonParams.leafColorR = lerp(currentSeasonParams.leafColorR, targetParams.lR, smooth);
       currentSeasonParams.leafColorG = lerp(currentSeasonParams.leafColorG, targetParams.lG, smooth);
       currentSeasonParams.leafColorB = lerp(currentSeasonParams.leafColorB, targetParams.lB, smooth);
-
       currentSeasonParams.oakColorR = lerp(currentSeasonParams.oakColorR, targetParams.oR, smooth);
       currentSeasonParams.oakColorG = lerp(currentSeasonParams.oakColorG, targetParams.oG, smooth);
       currentSeasonParams.oakColorB = lerp(currentSeasonParams.oakColorB, targetParams.oB, smooth);
     }
 
-    function lerp(start, end, t) {
-      return start * (1 - t) + end * t;
-    }
+    function lerp(start, end, t) { return start * (1 - t) + end * t; }
 
-    function drawTreeStatic() {
-      tCtx.clearRect(0, 0, treeWidth, treeHeight);
+    function drawTreeStaticToBuffer() {
+      oCtx.clearRect(0, 0, treeWidth, treeHeight);
+
+      oCtx.fillStyle = '#5d4037';
+      oCtx.strokeStyle = '#5d4037';
+      oCtx.lineCap = 'round';
 
       branches.forEach(b => {
         if (b.isTrunk) {
-          tCtx.fillStyle = '#5d4037';
-          tCtx.beginPath(); tCtx.moveTo(b.x1, b.y1); tCtx.lineTo(b.x2, b.y2); tCtx.lineTo(b.x3, b.y3); tCtx.lineTo(b.x4, b.y4); tCtx.closePath(); tCtx.fill();
+          oCtx.beginPath(); oCtx.moveTo(b.x1, b.y1); oCtx.lineTo(b.x2, b.y2); oCtx.lineTo(b.x3, b.y3); oCtx.lineTo(b.x4, b.y4); oCtx.closePath(); oCtx.fill();
         } else {
-          tCtx.beginPath(); tCtx.moveTo(b.x1, b.y1); tCtx.lineTo(b.x2, b.y2);
-          tCtx.strokeStyle = '#5d4037'; tCtx.lineWidth = b.w; tCtx.lineCap = 'round'; tCtx.stroke();
+          oCtx.beginPath(); oCtx.moveTo(b.x1, b.y1); oCtx.lineTo(b.x2, b.y2);
+          oCtx.lineWidth = b.w; oCtx.stroke();
         }
       });
 
       if (currentSeasonParams.snowAmount < 0.8) {
-        tCtx.globalCompositeOperation = 'screen';
-
-        let glowColor;
-        if (currentSeasonParams.leafColorR > 200 && currentSeasonParams.leafColorG < 100) {
-          glowColor = `rgba(255, 215, 0, 0.1)`;
-        } else {
-          glowColor = `rgba(255, 182, 193, 0.1)`;
-        }
-
+        oCtx.globalCompositeOperation = 'screen';
+        let glowColor = (currentSeasonParams.leafColorR > 200 && currentSeasonParams.leafColorG < 100) ? `rgba(255, 215, 0, 0.1)` : `rgba(255, 182, 193, 0.1)`;
         [...sakuraPuffs, ...oakPuffs].forEach(p => {
-          const alpha = 0.1 * currentSeasonParams.foliageDensity;
-          tCtx.fillStyle = glowColor;
-          tCtx.beginPath(); tCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); tCtx.fill();
+          oCtx.fillStyle = glowColor; oCtx.beginPath(); oCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); oCtx.fill();
         });
-        tCtx.globalCompositeOperation = 'source-over';
+        oCtx.globalCompositeOperation = 'source-over';
       }
 
       if (currentSeasonParams.foliageDensity > 0.05) {
-        updateSpritesColor();
-        drawBatch(tCtx, sakuraFlowers, sakuraSprite);
-        drawBatch(tCtx, oakLeaves, oakLeafSprite);
+        updateSpritesColor(oCtx);
+        drawBatch(oCtx, sakuraFlowers, sakuraSprite);
+        drawBatch(oCtx, oakLeaves, oakLeafSprite);
       }
 
       if (currentSeasonParams.snowAmount > 0.1) {
-        tCtx.fillStyle = '#ffffff';
+        oCtx.fillStyle = '#ffffff';
         snowOnBranches.forEach((item, index) => {
           if (index % Math.ceil(1 / currentSeasonParams.snowAmount) !== 0) return;
-          tCtx.beginPath();
-          tCtx.arc(item.x, item.y, item.size, 0, Math.PI * 2);
-          tCtx.fill();
+          oCtx.beginPath(); oCtx.arc(item.x, item.y, item.size, 0, Math.PI * 2); oCtx.fill();
         });
       }
     }
@@ -1158,137 +1146,112 @@
 
       groundLeaves.forEach(leaf => {
         const spr = leaf.type === 'sakura' ? sakuraSprite : oakLeafSprite;
-        fCtx.save();
-        fCtx.translate(leaf.x, leaf.y);
-        fCtx.rotate(leaf.rot);
-        fCtx.scale(leaf.size, leaf.size);
-        fCtx.drawImage(spr, -spr.width / 2, -spr.height / 2);
-        fCtx.restore();
+        fCtx.save(); fCtx.translate(leaf.x, leaf.y); fCtx.rotate(leaf.rot); fCtx.scale(leaf.size, leaf.size);
+        fCtx.drawImage(spr, -spr.width / 2, -spr.height / 2); fCtx.restore();
       });
 
-      // 2. Сугроб
       if (currentSeasonParams.groundSnowHeight > 1) {
-        fCtx.fillStyle = 'rgba(255, 255, 255, 1)';
-        fCtx.beginPath();
+        fCtx.fillStyle = 'rgba(255, 255, 255, 1)'; fCtx.beginPath(); fCtx.moveTo(0, treeHeight);
+        const baseLine = treeHeight; fCtx.lineTo(0, baseLine - currentSeasonParams.groundSnowHeight);
+        for (let x = 0; x <= treeWidth; x += 20) { fCtx.lineTo(x, baseLine - currentSeasonParams.groundSnowHeight + Math.sin(x * 0.01) * 5); }
+        fCtx.lineTo(treeWidth, baseLine - currentSeasonParams.groundSnowHeight + Math.sin(treeWidth * 0.01) * 5);
+        fCtx.lineTo(treeWidth, treeHeight); fCtx.closePath(); fCtx.fill();
+      }
 
-        // Начинаем строго с левого нижнего угла
-        fCtx.moveTo(0, treeHeight);
+      const limitY = treeHeight;
 
-        const baseLine = treeHeight;
-        // Левый край сугроба
-        fCtx.lineTo(0, baseLine - currentSeasonParams.groundSnowHeight);
+      if (isRainyDay) {
+        fCtx.strokeStyle = 'rgba(174, 194, 224, 0.5)';
+        fCtx.lineWidth = 1.5;
 
-        // Рисуем волну
-        for (let x = 0; x <= treeWidth; x += 20) {
-          fCtx.lineTo(x, baseLine - currentSeasonParams.groundSnowHeight + Math.sin(x * 0.01) * 5);
+        if (rainDrops.length < 400 && Math.random() < 0.8) {
+          rainDrops.push({
+            x: Math.random() * (treeWidth + 200) - 100,
+            y: -50 - Math.random() * 100,
+            vx: -3, vy: 25 + Math.random() * 10, len: 20 + Math.random() * 15
+          });
         }
 
-        // --- ИСПРАВЛЕНИЕ СРЕЗА СПРАВА ---
-        // Принудительно ставим точку в самом правом нижнем углу
-        fCtx.lineTo(treeWidth, baseLine - currentSeasonParams.groundSnowHeight + Math.sin(treeWidth * 0.01) * 5);
-        fCtx.lineTo(treeWidth, treeHeight);
+        for (let i = rainDrops.length - 1; i >= 0; i--) {
+          let drop = rainDrops[i];
+          drop.x += drop.vx; drop.y += drop.vy;
+          let angle = Math.atan2(drop.vy, drop.vx);
+          fCtx.save(); fCtx.translate(drop.x, drop.y); fCtx.rotate(angle - Math.PI / 2);
+          fCtx.beginPath(); fCtx.moveTo(0, 0); fCtx.lineTo(0, drop.len); fCtx.stroke();
+          fCtx.restore();
 
-        fCtx.closePath();
-        fCtx.fill();
+          if (drop.y > limitY) {
+            for (let s = 0; s < 4; s++) {
+              splashes.push({ x: drop.x, y: limitY - 2, vx: (Math.random() - 0.5) * 4, vy: -Math.random() * 4, life: 1.0 });
+            }
+            rainDrops.splice(i, 1);
+          }
+        }
+
+        fCtx.strokeStyle = 'rgba(174, 194, 224, 0.3)';
+        for (let i = splashes.length - 1; i >= 0; i--) {
+          let s = splashes[i]; s.x += s.vx; s.y += s.vy; s.life -= 0.08;
+          if (s.life <= 0) { splashes.splice(i, 1); }
+          else { fCtx.beginPath(); fCtx.moveTo(s.x, s.y); fCtx.lineTo(s.x + s.vx * 2, s.y + s.vy * 2); fCtx.stroke(); }
+        }
       }
-      const limitY = treeHeight;
 
       for (let i = fallingElements.length - 1; i >= 0; i--) {
         const el = fallingElements[i];
-
-        el.x += el.vx;
-        el.y += el.vy;
-        el.rot += el.rs;
-
-        if (el.type === 'snow') {
-          el.x += Math.sin(el.y * 0.05) * 0.5;
-        } else {
-          el.vx += Math.sin(el.y * 0.05) * 0.05;
-        }
-
-        if (el.x < 0) el.x = 0;
-        if (el.x > treeWidth) el.x = treeWidth;
-
+        el.x += el.vx; el.y += el.vy; el.rot += el.rs;
+        if (el.type === 'snow') { el.x += Math.sin(el.y * 0.05) * 0.5; }
+        else { el.vx += Math.sin(el.y * 0.05) * 0.05; }
+        if (el.x < 0) el.x = 0; if (el.x > treeWidth) el.x = treeWidth;
         const spr = el.type === 'snow' ? snowflakeSprite : (el.type === 'sakura' ? sakuraSprite : oakLeafSprite);
-
         fCtx.save(); fCtx.translate(el.x, el.y); fCtx.rotate(el.rot); fCtx.scale(el.size, el.size);
         fCtx.drawImage(spr, -spr.width / 2, -spr.height / 2); fCtx.restore();
-
         if (el.y > limitY) fallingElements.splice(i, 1);
       }
     }
 
-    let lastPhase = '';
-    function updateSpritesColor() {
-      const sCtx = sakuraSprite.getContext('2d');
-      sCtx.clearRect(0, 0, 10, 10);
+    function updateSpritesColor(ctx) {
+      const sCtx = sakuraSprite.getContext('2d'); sCtx.clearRect(0, 0, 10, 10);
       sCtx.fillStyle = `rgb(${currentSeasonParams.leafColorR}, ${currentSeasonParams.leafColorG}, ${currentSeasonParams.leafColorB})`;
-      sCtx.translate(5, 5);
-      for (let i = 0; i < 5; i++) {
-        sCtx.beginPath(); sCtx.arc(0, -2, 2, 0, Math.PI * 2); sCtx.fill();
-        sCtx.rotate(Math.PI * 2 / 5);
-      }
+      sCtx.translate(5, 5); for (let i = 0; i < 5; i++) { sCtx.beginPath(); sCtx.arc(0, -2, 2, 0, Math.PI * 2); sCtx.fill(); sCtx.rotate(Math.PI * 2 / 5); }
       sCtx.setTransform(1, 0, 0, 1, 0, 0);
-
-      const oCtx = oakLeafSprite.getContext('2d');
-      oCtx.clearRect(0, 0, 10, 10);
-      oCtx.fillStyle = `rgb(${currentSeasonParams.oakColorR}, ${currentSeasonParams.oakColorG}, ${currentSeasonParams.oakColorB})`;
-      oCtx.translate(5, 5);
-      oCtx.beginPath(); oCtx.ellipse(0, 0, 4, 2, 0, 0, Math.PI * 2); oCtx.fill();
-      oCtx.setTransform(1, 0, 0, 1, 0, 0);
+      const oCtxSpr = oakLeafSprite.getContext('2d'); oCtxSpr.clearRect(0, 0, 10, 10);
+      oCtxSpr.fillStyle = `rgb(${currentSeasonParams.oakColorR}, ${currentSeasonParams.oakColorG}, ${currentSeasonParams.oakColorB})`;
+      oCtxSpr.translate(5, 5); oCtxSpr.beginPath(); oCtxSpr.ellipse(0, 0, 4, 2, 0, 0, Math.PI * 2); oCtxSpr.fill();
+      oCtxSpr.setTransform(1, 0, 0, 1, 0, 0);
     }
 
     function drawBatch(ctx, arr, sprite) {
       const w = sprite.width / 2, h = sprite.height / 2;
-      arr.forEach(item => {
-        ctx.save();
-        ctx.translate(item.x, item.y);
-        ctx.rotate(item.rot);
-        ctx.scale(item.size, item.size);
-        ctx.drawImage(sprite, -w, -h);
-        ctx.restore();
-      });
+      arr.forEach(item => { ctx.save(); ctx.translate(item.x, item.y); ctx.rotate(item.rot); ctx.scale(item.size, item.size); ctx.drawImage(sprite, -w, -h); ctx.restore(); });
     }
 
     function animateTree(currentTime) {
       if (!isTreeVisible) return;
       animationFrameId = requestAnimationFrame(animateTree);
+
       const dtMs = currentTime - lastTreeTime;
       if (dtMs < frameInterval) return;
       lastTreeTime = currentTime - (dtMs % frameInterval);
 
       updateSeasonParams(dtMs / 1000);
 
-      drawTreeStatic();
+      drawTreeStaticToBuffer();
+
+      tCtx.clearRect(0, 0, treeWidth, treeHeight);
+      tCtx.drawImage(offscreenCanvas, 0, 0, treeWidth, treeHeight);
+
       drawFrontLayer();
 
       if (fallingElements.length < fallingLimit && Math.random() < currentSeasonParams.fallRate) {
         const isSnow = currentSeasonParams.isSnowing;
-
         if (isSnow) {
-          fallingElements.push({
-            type: 'snow',
-            x: Math.random() * treeWidth,
-            y: -10,
-            vx: (Math.random() - 0.5) * 1,
-            vy: 1 + Math.random() * 2,
-            rot: Math.random() * Math.PI * 2, rs: (Math.random() - 0.5) * 0.05,
-            size: 0.5 + Math.random() * 0.8
-          });
+          fallingElements.push({ type: 'snow', x: Math.random() * treeWidth, y: -10, vx: (Math.random() - 0.5) * 1, vy: 1 + Math.random() * 2, rot: Math.random() * Math.PI * 2, rs: (Math.random() - 0.5) * 0.05, size: 0.5 + Math.random() * 0.8 });
         } else {
           if (currentSeasonParams.foliageDensity > 0.1) {
             const nb = branches.filter(b => !b.isTrunk);
             if (nb.length > 0) {
-              const rb = nb[Math.floor(Math.random() * nb.length)];
-              const t = Math.random();
-              fallingElements.push({
-                type: (rb.side === 'right') ? 'oak' : 'sakura',
-                x: rb.x1 + (rb.x2 - rb.x1) * t, y: rb.y1 + (rb.y2 - rb.y1) * t,
-                vx: (Math.random() - 0.5) * 0.5,
-                vy: 1 + Math.random() * 2,
-                rot: Math.random() * Math.PI * 2, rs: (Math.random() - 0.5) * 0.1,
-                size: 0.8 + Math.random() * 0.4
-              });
+              const rb = nb[Math.floor(Math.random() * nb.length)]; const t = Math.random();
+              fallingElements.push({ type: (rb.side === 'right') ? 'oak' : 'sakura', x: rb.x1 + (rb.x2 - rb.x1) * t, y: rb.y1 + (rb.y2 - rb.y1) * t, vx: (Math.random() - 0.5) * 0.5, vy: 1 + Math.random() * 2, rot: Math.random() * Math.PI * 2, rs: (Math.random() - 0.5) * 0.1, size: 0.8 + Math.random() * 0.4 });
             }
           }
         }
@@ -1297,58 +1260,44 @@
 
     initTree();
 
-
-    // ==========================================
-    // ЧАСТЬ 2: ЛОГИКА САЙТА
-    // ==========================================
-
     const ITEM_HEIGHT = 30;
     const REPEAT_COUNT = 50;
     const months = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
     const currentYear = new Date().getFullYear();
 
+    function playSound(type) {
+      let audio;
+      let volumeVal;
+      if (type === 'menu') { audio = document.getElementById('menuClickSound'); volumeVal = MENU_CLICK_VOLUME; }
+      else { audio = document.getElementById('uiClickSound'); volumeVal = UI_CLICK_VOLUME; }
+      if (audio) { audio.currentTime = 0; audio.volume = volumeVal; audio.play().catch(e => { }); }
+    }
+
     function initPickers() {
-      setupColumn('startDayCol', 1, 31, 'day');
-      setupColumn('startMonthCol', 1, 12, 'month');
-      setupColumn('startYearCol', currentYear - 1, currentYear + 5, 'year');
-      setupColumn('endDayCol', 1, 31, 'day');
-      setupColumn('endMonthCol', 1, 12, 'month');
-      setupColumn('endYearCol', currentYear - 1, currentYear + 5, 'year');
-      setPickerValue('start', new Date());
-      let endDate = new Date(); endDate.setFullYear(endDate.getFullYear() + 1);
-      setPickerValue('end', endDate);
+      setupColumn('startDayCol', 1, 31, 'day'); setupColumn('startMonthCol', 1, 12, 'month'); setupColumn('startYearCol', currentYear - 1, currentYear + 5, 'year');
+      setupColumn('endDayCol', 1, 31, 'day'); setupColumn('endMonthCol', 1, 12, 'month'); setupColumn('endYearCol', currentYear - 1, currentYear + 5, 'year');
+      setPickerValue('start', new Date()); let endDate = new Date(); endDate.setFullYear(endDate.getFullYear() + 1); setPickerValue('end', endDate);
     }
 
     function setupColumn(id, min, max, type) {
-      const el = document.getElementById(id);
-      let html = '';
-      for (let r = 0; r < REPEAT_COUNT; r++) {
-        for (let i = min; i <= max; i++) {
-          let val = type === 'month' ? months[i - 1] : i;
-          html += `<div class="drum-item" data-val="${i}">${val}</div>`;
-        }
-      }
+      const el = document.getElementById(id); let html = '';
+      for (let r = 0; r < REPEAT_COUNT; r++) { for (let i = min; i <= max; i++) { let val = type === 'month' ? months[i - 1] : i; html += `<div class="drum-item" data-val="${i}">${val}</div>`; } }
       el.innerHTML = html;
-      el.addEventListener('scroll', () => { updateHighlight(el); checkInfiniteLoop(el, min, max); });
+      el.addEventListener('scroll', () => { updateHighlight(el); checkInfiniteLoop(el, min, max); }, { passive: true });
       el.addEventListener('click', (e) => {
         if (e.target.classList.contains('drum-item')) {
-          const rect = e.target.getBoundingClientRect();
-          const containerRect = el.getBoundingClientRect();
+          const rect = e.target.getBoundingClientRect(); const containerRect = el.getBoundingClientRect();
           const offsetTop = rect.top - containerRect.top + el.scrollTop;
           const targetScroll = offsetTop - (el.clientHeight / 2) + (ITEM_HEIGHT / 2);
           el.scrollTo({ top: targetScroll, behavior: 'smooth' });
         }
       });
-      el.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        el.scrollBy({ top: Math.sign(e.deltaY) * ITEM_HEIGHT, behavior: 'smooth' });
-      }, { passive: false });
+      el.addEventListener('wheel', (e) => { e.preventDefault(); el.scrollBy({ top: Math.sign(e.deltaY) * ITEM_HEIGHT, behavior: 'smooth' }); }, { passive: false });
       updateHighlight(el);
     }
 
     function checkInfiniteLoop(el, min, max) {
-      const rangeSize = (max - min + 1) * ITEM_HEIGHT;
-      const threshold = rangeSize * 5;
+      const rangeSize = (max - min + 1) * ITEM_HEIGHT; const threshold = rangeSize * 5;
       if (el.scrollTop < threshold) el.scrollTop += rangeSize * Math.floor(REPEAT_COUNT / 2);
       else if (el.scrollTop > el.scrollHeight - threshold - el.clientHeight) el.scrollTop -= rangeSize * Math.floor(REPEAT_COUNT / 2);
     }
@@ -1356,92 +1305,48 @@
     function updateHighlight(column) {
       const scrollTop = column.scrollTop;
       const centerIndex = Math.round((scrollTop + (column.clientHeight / 2) - (ITEM_HEIGHT / 2)) / ITEM_HEIGHT);
-      const items = column.querySelectorAll('.drum-item');
-      const prev = column.querySelector('.active');
+      const items = column.querySelectorAll('.drum-item'); const prev = column.querySelector('.active');
       if (prev && prev !== items[centerIndex]) prev.classList.remove('active');
       if (items[centerIndex]) items[centerIndex].classList.add('active');
     }
 
     function setPickerValue(prefix, date) {
-      scrollToValue(`${prefix}DayCol`, date.getDate());
-      scrollToValue(`${prefix}MonthCol`, date.getMonth() + 1);
-      scrollToValue(`${prefix}YearCol`, date.getFullYear());
+      scrollToValue(`${prefix}DayCol`, date.getDate()); scrollToValue(`${prefix}MonthCol`, date.getMonth() + 1); scrollToValue(`${prefix}YearCol`, date.getFullYear());
     }
 
     function scrollToValue(colId, value) {
-      const col = document.getElementById(colId);
-      const items = col.querySelectorAll('.drum-item');
-      let targetIndex = -1;
+      const col = document.getElementById(colId); const items = col.querySelectorAll('.drum-item'); let targetIndex = -1;
       const middleStart = Math.floor((items.length / REPEAT_COUNT) * (REPEAT_COUNT / 2));
-      for (let i = middleStart; i < middleStart + 100; i++) {
-        if (items[i] && parseInt(items[i].getAttribute('data-val')) === value) { targetIndex = i; break; }
-      }
-      if (targetIndex !== -1) {
-        col.style.scrollBehavior = 'auto';
-        col.scrollTop = targetIndex * ITEM_HEIGHT;
-        col.style.scrollBehavior = 'smooth';
-        updateHighlight(col);
-      }
+      for (let i = middleStart; i < middleStart + 100; i++) { if (items[i] && parseInt(items[i].getAttribute('data-val')) === value) { targetIndex = i; break; } }
+      if (targetIndex !== -1) { col.style.scrollBehavior = 'auto'; col.scrollTop = targetIndex * ITEM_HEIGHT; col.style.scrollBehavior = 'smooth'; updateHighlight(col); }
     }
 
     function getPickerDate(prefix) {
-      const day = getSelectedValue(`${prefix}DayCol`);
-      const month = getSelectedValue(`${prefix}MonthCol`) - 1;
-      const year = getSelectedValue(`${prefix}YearCol`);
+      const day = getSelectedValue(`${prefix}DayCol`); const month = getSelectedValue(`${prefix}MonthCol`) - 1; const year = getSelectedValue(`${prefix}YearCol`);
       return new Date(year, month, day);
     }
 
     function getSelectedValue(colId) {
-      const col = document.getElementById(colId);
-      const scrollTop = col.scrollTop;
+      const col = document.getElementById(colId); const scrollTop = col.scrollTop;
       const centerIndex = Math.round((scrollTop + (col.clientHeight / 2) - (ITEM_HEIGHT / 2)) / ITEM_HEIGHT);
       const item = col.children[centerIndex];
       return (item && item.getAttribute('data-val')) ? parseInt(item.getAttribute('data-val')) : 1;
     }
 
-    const greetings = [
-      "Привет, зайка ❤️", "Как дела солнышко", "Люблю тебя бесконечно сильно 💞",
-      "Привет, моя хорошая😍", "Я очень скучаю(", "Ты самое дорогое золотце",
-      "Обнимаю крепко-крепко🤗", "Привет, солнышо❤️", "Ты лучшее что случалось в моей жизни",
-      "Люблю тебя зайка😘", "Хорошего тебе дня любимая", "Сколько там осталось?",
-      "Ты безумно красивая😽"
-    ];
-
+    const greetings = ["Привет, зайка ❤️", "Как дела солнышко", "Люблю тебя бесконечно сильно 💞", "Привет, моя хорошая😍", "Я очень скучаю(", "Ты самое дорогое золотце", "Обнимаю крепко-крепко🤗", "Привет, солнышо❤️", "Ты лучшее что случалось в моей жизни", "Люблю тебя зайка😘", "Хорошего тебе дня любимая", "Сколько там осталось?", "Ты безумно красивая😽"];
     const dailyContent = [
-      { type: 'text', content: "Ты самая лучшая девушка на свете <3" },
-      { type: 'text', content: "Безумно сильно люблю тебя и скучаю, солнышко!" },
-      { type: 'text', content: "Ты безумно красивая, солнышко, твоя улыбка, глаза, божеее... Я тону в твоей красоте" },
-      { type: 'text', content: "Поскорее бы увидеть тебя и обнять(" },
-      { type: 'text', content: "Мне тебя безумно не хватает..." },
-      { type: 'text', content: "Не проходит ни дня без мысли о тебе" },
-      { type: 'text', content: "Каждое мгновенье я вижу тебя рядом с собой" },
-      { type: 'text', content: "Один день без тебя - самый унылый день в жизни" },
-      { type: 'text', content: "Ты делаешь меня счастливым моя любименькая)" },
-      { type: 'text', content: "Жду не дождусь нашей встречи, зайка" },
-      { type: 'text', content: "Хорошо ли проходят твои дни, солнце? Я скучаю ,_," },
-      { type: 'text', content: "Вот бы снова посмотреть с тобой фильм вечером после тяжелого дня" },
-      { type: 'text', content: "Всё бы отдал лишь бы обнять тебя вновь" },
-      { type: 'text', content: "С каждым днём мы всё ближе к друг другу, любимая <3" },
-      { type: 'text', content: "Всё обязательно будет хорошо солнышко" },
-      { type: 'text', content: "А я тебя люблю очень сильно)" },
-      { type: 'text', content: "Когда я называю тебя 'солнцем' я говорю это всерьёз, для меня ты самое яркое солнышко" },
-      { type: 'text', content: "Вспоминая о времени проведённым с тобой, я невольно улыбаюсь)" },
-      { type: 'text', content: "Спасибо за каждый миг что ты со мной любименькая <3" },
-      { type: 'text', content: "Я безумно рад тому что именно ты моя девушка" },
-      { type: 'text', content: "У тебя обязательно всё получиться, чтобы ты не задумала" },
-      { type: 'text', content: "Береги себя и не забрасывай своё здоровье, и ещё кушай хорошо, люблю тебя" },
-      { type: 'text', content: "Мне не хватает наших совместных вечеров любимая ,_," },
-      { type: 'text', content: "Ты единственная и невероятная для меня" },
-      { type: 'text', content: "Если бы у меня были 1000 жизней, каждую из них я бы выбрал провести с тобой" },
-      { type: 'text', content: "Ты моё самое дорогое счастье!" },
-      { type: 'text', content: "Хотелось бы скинуть тебе пару десятков тик токов о том как сильно я тебя люблю (┬┬┬┬)" },
-      { type: 'text', content: "Влюбиться в тебя было лучшей случайностью в моей жизни" },
-      { type: 'text', content: "С тобой я чувствую себя по-настоящему живым" },
-      { type: 'text', content: "Моё сердце бьётся чаще при виде тебя" },
-      { type: 'text', content: "Я всегда за тебя моя маленькая, всегда поддержу и буду рядом, солнышко" },
-      { type: 'text', content: "Ты моя принцесса, самое дорогое золотце моё, Безумно сильно тебя люблю" }
+      { type: 'text', content: "Ты самая лучшая девушка на свете <3" }, { type: 'text', content: "Безумно сильно люблю тебя и скучаю, солнышко!" }, { type: 'text', content: "Ты безумно красивая, солнышко, твоя улыбка, глаза, божеее... Я тону в твоей красоте" },
+      { type: 'text', content: "Поскорее бы увидеть тебя и обнять(" }, { type: 'text', content: "Мне тебя безумно не хватает..." }, { type: 'text', content: "Не проходит ни дня без мысли о тебе" },
+      { type: 'text', content: "Каждое мгновенье я вижу тебя рядом с собой" }, { type: 'text', content: "Один день без тебя - самый унылый день в жизни" }, { type: 'text', content: "Ты делаешь меня счастливым моя любименькая)" },
+      { type: 'text', content: "Жду не дождусь нашей встречи, зайка" }, { type: 'text', content: "Хорошо ли проходят твои дни, солнце? Я скучаю ,_," }, { type: 'text', content: "Вот бы снова посмотреть с тобой фильм вечером после тяжелого дня" },
+      { type: 'text', content: "Всё бы отдал лишь бы обнять тебя вновь" }, { type: 'text', content: "С каждым днём мы всё ближе к друг другу, любимая <3" }, { type: 'text', content: "Всё обязательно будет хорошо солнышко" },
+      { type: 'text', content: "А я тебя люблю очень сильно)" }, { type: 'text', content: "Когда я называю тебя 'солнцем' я говорю это всерьёз, для меня ты самое яркое солнышко" }, { type: 'text', content: "Вспоминая о времени проведённым с тобой, я невольно улыбаюсь)" },
+      { type: 'text', content: "Спасибо за каждый миг что ты со мной любимая <3" }, { type: 'text', content: "Я безумно рад тому что именно ты моя девушка" }, { type: 'text', content: "У тебя обязательно всё получиться, чтобы ты не задумала" },
+      { type: 'text', content: "Береги себя и не забрасывай своё здоровье, и ещё кушай хорошо, люблю тебя" }, { type: 'text', content: "Мне не хватает наших совместных вечеров любимая ,_," }, { type: 'text', content: "Ты единственная и невероятная для меня" },
+      { type: 'text', content: "Если бы у меня были 1000 жизней, каждую из них я бы выбрал провести с тобой" }, { type: 'text', content: "Ты моё самое дорогое счастье!" }, { type: 'text', content: "Хотелось бы скинуть тебе пару десятков тик токов о том как сильно я тебя люблю (┬┬┬┬)" },
+      { type: 'text', content: "Влюбиться в тебя было лучшей случайностью в моей жизни" }, { type: 'text', content: "С тобой я чувствую себя по-настоящему живым" }, { type: 'text', content: "Моё сердце бьётся чаще при виде тебя" },
+      { type: 'text', content: "Я всегда за тебя моя маленькая, всегда поддержу и буду рядом, солнышко" }, { type: 'text', content: "Ты моя принцесса, самое дорогое золотце моё, Безумно сильно тебя люблю" }
     ];
-
     const quickMsgs = {
       support: ["У тебя обязательно всё получиться зайка", "Я всегда в тебя верю любимая", "Ты умничка", "Умничка моя", "Всё что задумала сбудется", "Молодчинка", "Я горжусь тобой, солнышко", "Ты у меня такая сильная", "Не переживай сильно, всё плохое пройдёт и наступит свет", "Если что-то не получается сейчас, попробуй чуть позже", "Я рядом, любимая, хоть и не физически", "Я знаю что ты у меня самая умненькая и способная, чтобы ты не говорила", "Ты красотка", "Если и есть в этом мире сила, то она вся в тебе",],
       love: ["Люблю тебя бесконечно сильно, солнце", "Ооооочень сильно тебя люблю", "Безумно люблю тебя, зайка", "Люблю тебя безумно сильно", "Сильно сильно тебя люблю", "Очень очень очень очень очень очень сильно тебя люблю моя прелесть!", "Люблю тебя, солнышко"],
@@ -1455,46 +1360,24 @@
     const lastMsgHistory = {};
 
     function mulberry32(a) {
-      return function () {
-        var t = a += 0x6D2B79F5;
-        t = Math.imul(t ^ t >>> 15, t | 1);
-        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-        return ((t ^ t >>> 14) >>> 0) / 4294967296;
-      }
+      return function () { var t = a += 0x6D2B79F5; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }
     }
-
     function shuffleWithSeed(array, seed) {
-      const rng = mulberry32(seed);
-      let currentIndex = array.length, randomIndex;
-      while (currentIndex != 0) {
-        randomIndex = Math.floor(rng() * currentIndex);
-        currentIndex--;
-        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
-      }
+      const rng = mulberry32(seed); let currentIndex = array.length, randomIndex;
+      while (currentIndex != 0) { randomIndex = Math.floor(rng() * currentIndex); currentIndex--;[array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]]; }
       return array;
     }
 
     function init() {
-      const savedStart = localStorage.getItem('armyStartDate');
-      const savedEnd = localStorage.getItem('armyEndDate');
-      const savedDebug = localStorage.getItem('debugOffset');
-      const savedTestDate = localStorage.getItem('testSeasonDate');
-
-      if (savedDebug) {
-        debugDays = parseInt(savedDebug);
-        document.getElementById('debugOffset').value = debugDays;
-      }
-
-      if (savedTestDate) {
-        manualSeasonDate = savedTestDate;
-        document.getElementById('testSeasonDate').value = savedTestDate;
-      }
+      const savedStart = localStorage.getItem('armyStartDate'); const savedEnd = localStorage.getItem('armyEndDate');
+      const savedDebug = localStorage.getItem('debugOffset'); const savedTestDate = localStorage.getItem('testSeasonDate');
+      if (savedDebug) { debugDays = parseInt(savedDebug); document.getElementById('debugOffset').value = debugDays; }
+      if (savedTestDate) { manualSeasonDate = savedTestDate; document.getElementById('testSeasonDate').value = savedTestDate; }
+      checkRainCondition();
 
       if (savedStart && savedEnd) {
-        startDate = new Date(savedStart);
-        startDate.setHours(0, 0, 0, 0);
-        dembelDate = new Date(savedEnd);
-        dembelDate.setHours(0, 0, 0, 0);
+        startDate = new Date(savedStart); startDate.setHours(0, 0, 0, 0);
+        dembelDate = new Date(savedEnd); dembelDate.setHours(0, 0, 0, 0);
         document.getElementById('setupScreen').style.display = 'none';
         document.getElementById('appContent').classList.remove('blurred');
         startApp();
@@ -1506,11 +1389,9 @@
     }
 
     function saveDatesAndStart() {
-      const startVal = getPickerDate('start');
-      const endVal = getPickerDate('end');
+      const startVal = getPickerDate('start'); const endVal = getPickerDate('end');
       if (!startVal || !endVal) { alert("Ошибка выбора дат!"); return; }
-      startDate = startVal; startDate.setHours(0, 0, 0, 0);
-      dembelDate = endVal; dembelDate.setHours(0, 0, 0, 0);
+      startDate = startVal; startDate.setHours(0, 0, 0, 0); dembelDate = endVal; dembelDate.setHours(0, 0, 0, 0);
       localStorage.setItem('armyStartDate', startDate.toISOString().split('T')[0]);
       localStorage.setItem('armyEndDate', dembelDate.toISOString().split('T')[0]);
       document.getElementById('setupScreen').style.display = 'none';
@@ -1519,27 +1400,67 @@
     }
 
     function startApp() {
-      setRandomGreeting();
-      updateDailyCard();
-      updateDembelTimer();
-      setInterval(updateDembelTimer, 60000);
-      setInterval(updateMidnightTimer, 1000);
+      setRandomGreeting(); updateDailyCard(); updateDembelTimer();
+      setInterval(updateDembelTimer, 60000); setInterval(updateMidnightTimer, 1000);
     }
 
     const heartBtn = document.getElementById('heartBtn');
     const heartAudio = document.getElementById('heartAudio');
     try { heartAudio.volume = 1.0; } catch (e) { }
-
     let isPlaying = false;
+
+    const musicPlayer1 = new Audio(); const musicPlayer2 = new Audio();
+    let activePlayer = musicPlayer1; let nextPlayer = musicPlayer2;
+    const playlist = ["music1.mp3", "music2.mp3", "music3.mp3", "music4.mp3", "music5.mp3"];
+    let currentTrackIndex = -1; let isMusicAllowed = false; let isMusicInitialized = false;
+
+    [musicPlayer1, musicPlayer2].forEach(player => { player.volume = 0; player.loop = false; });
+
+    function pickNextRandomTrack() {
+      if (playlist.length <= 1) return 0;
+      let newIndex; do { newIndex = Math.floor(Math.random() * playlist.length); } while (newIndex === currentTrackIndex);
+      return newIndex;
+    }
+
+    function playNextTrackSmooth() {
+      if (!isMusicAllowed) return;
+      currentTrackIndex = pickNextRandomTrack();
+      nextPlayer.src = playlist[currentTrackIndex]; nextPlayer.volume = 0;
+      nextPlayer.play().catch(e => console.log("Play error:", e));
+      let fadeDuration = 2000; let steps = 20; let stepTime = fadeDuration / steps; let volStep = MUSIC_VOLUME_TARGET / steps;
+      let currentStep = 0;
+      let fadeInterval = setInterval(() => {
+        currentStep++; nextPlayer.volume += volStep; activePlayer.volume -= volStep;
+        if (currentStep >= steps) {
+          clearInterval(fadeInterval); activePlayer.pause(); activePlayer.currentTime = 0;
+          let temp = activePlayer; activePlayer = nextPlayer; nextPlayer = temp;
+          activePlayer.volume = MUSIC_VOLUME_TARGET;
+        }
+      }, stepTime);
+    }
+    musicPlayer1.addEventListener('ended', playNextTrackSmooth);
+    musicPlayer2.addEventListener('ended', playNextTrackSmooth);
+
+    const rainAudio = document.getElementById('rainAudio');
+    setInterval(() => {
+      if (activePlayer) {
+        let desiredVol = isMusicAllowed ? MUSIC_VOLUME_TARGET : 0;
+        activePlayer.volume += (desiredVol - activePlayer.volume) * 0.1;
+      }
+      if (rainAudio) {
+        let desiredRain = isRainyDay ? RAIN_VOLUME_TARGET : 0;
+        if (isPlaying) desiredRain = 0.05;
+        rainAudio.volume += (desiredRain - rainAudio.volume) * 0.1;
+      }
+    }, 100);
+
     heartBtn.addEventListener('click', () => {
+      playSound('ui');
       if (!isPlaying) {
-        heartBtn.classList.add('beating');
-        isPlaying = true;
+        heartBtn.classList.add('beating'); isPlaying = true;
         heartAudio.play().catch(e => console.log("Audio error"));
       } else {
-        heartBtn.classList.remove('beating');
-        isPlaying = false;
-        heartAudio.pause();
+        heartBtn.classList.remove('beating'); isPlaying = false; heartAudio.pause();
       }
     });
 
@@ -1549,42 +1470,28 @@
       if (realDiff < 1) realDiff = 1;
       const totalDays = realDiff + debugDays;
       document.getElementById('cardDateLabel').innerText = `ДЕНЬ СЛУЖБЫ: ${totalDays}`;
-
       let item;
-      if (totalDays <= 31) {
-        const index = (totalDays - 1) % dailyContent.length;
-        item = dailyContent[index];
-      } else {
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
-        const dayOfMonth = now.getDate();
+      if (totalDays <= 31) { const index = (totalDays - 1) % dailyContent.length; item = dailyContent[index]; }
+      else {
+        const currentMonth = now.getMonth(); const currentYear = now.getFullYear(); const dayOfMonth = now.getDate();
         const daysInThisMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
         const seed = currentYear * 100 + (currentMonth + 1);
         let monthlyPhrases = dailyContent.slice(0, daysInThisMonth);
         monthlyPhrases = shuffleWithSeed(monthlyPhrases, seed);
         item = monthlyPhrases[dayOfMonth - 1];
       }
-
-      const cardBody = document.getElementById('cardBody');
-      cardBody.style.opacity = 0;
+      const cardBody = document.getElementById('cardBody'); cardBody.style.opacity = 0;
       setTimeout(() => {
-        if (item && item.type === 'img') {
-          cardBody.innerHTML = `<img src="${item.src}" class="card-img"><p>${item.content}</p>`;
-        } else if (item) {
-          cardBody.innerHTML = `<p>"${item.content}"</p>`;
-        } else {
-          cardBody.innerHTML = "<p>Сообщение не найдено</p>";
-        }
+        if (item && item.type === 'img') { cardBody.innerHTML = `<img src="${item.src}" class="card-img"><p>${item.content}</p>`; }
+        else if (item) { cardBody.innerHTML = `<p>"${item.content}"</p>`; }
+        else { cardBody.innerHTML = "<p>Сообщение не найдено</p>"; }
         cardBody.style.opacity = 1;
       }, 300);
       updateMidnightTimer();
     }
 
     function updateMidnightTimer() {
-      const now = new Date();
-      const tomorrow = new Date(now);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(0, 0, 0, 0);
+      const now = new Date(); const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1); tomorrow.setHours(0, 0, 0, 0);
       const diff = tomorrow - now;
       const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -1593,65 +1500,48 @@
     }
 
     function showQuickMsg(type) {
-      const list = quickMsgs[type];
-      let msg;
+      playSound('menu');
+      const list = quickMsgs[type]; let msg;
       if (list.length === 1) { msg = list[0]; }
-      else {
-        do { msg = list[Math.floor(Math.random() * list.length)]; }
-        while (msg === lastMsgHistory[type]);
-      }
+      else { do { msg = list[Math.floor(Math.random() * list.length)]; } while (msg === lastMsgHistory[type]); }
       lastMsgHistory[type] = msg;
-      const textEl = document.getElementById('quickMsgText');
-      textEl.classList.remove('visible');
-      setTimeout(() => {
-        textEl.innerText = msg;
-        textEl.classList.add('visible');
-      }, 500);
+      const textEl = document.getElementById('quickMsgText'); textEl.classList.remove('visible');
+      setTimeout(() => { textEl.innerText = msg; textEl.classList.add('visible'); }, 500);
     }
 
     function updateDembelTimer() {
-      const now = new Date();
-      let adjustedDembel = new Date(dembelDate);
-      adjustedDembel.setDate(adjustedDembel.getDate() - debugDays);
+      const now = new Date(); let adjustedDembel = new Date(dembelDate); adjustedDembel.setDate(adjustedDembel.getDate() - debugDays);
       const diff = adjustedDembel - now;
       if (diff <= 0) { document.getElementById('countdown').innerText = "МЫ ДОМА! ❤️"; return; }
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24)); const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       document.getElementById('countdown').innerText = `${days} дн. ${hours} ч.`;
     }
 
-    function openSettings() { document.getElementById('settingsModal').classList.add('active'); }
-    function closeSettings() { document.getElementById('settingsModal').classList.remove('active'); }
-    function openSystemMenu() { document.getElementById('systemModal').classList.add('active'); }
-    function closeSystemMenu() { document.getElementById('systemModal').classList.remove('active'); }
-    function openInfoFromSettings() {
-      closeSettings();
-      setTimeout(() => { document.getElementById('infoModal').classList.add('active'); }, 300);
-    }
-    function closeInfo() { document.getElementById('infoModal').classList.remove('active'); }
+    function openSettings() { playSound('ui'); document.getElementById('settingsModal').classList.add('active'); }
+    function closeSettings() { playSound('ui'); document.getElementById('settingsModal').classList.remove('active'); }
+    function openSystemMenu() { playSound('ui'); document.getElementById('systemModal').classList.add('active'); }
+    function closeSystemMenu() { playSound('ui'); document.getElementById('systemModal').classList.remove('active'); }
+    function openInfoFromSettings() { playSound('ui'); closeSettings(); setTimeout(() => { document.getElementById('infoModal').classList.add('active'); }, 300); }
+    function closeInfo() { playSound('ui'); document.getElementById('infoModal').classList.remove('active'); }
+
     function updateDebugMode() {
       const val = parseInt(document.getElementById('debugOffset').value) || 0;
-      debugDays = val;
-      localStorage.setItem('debugOffset', val);
-      updateDailyCard();
-      updateDembelTimer();
+      debugDays = val; localStorage.setItem('debugOffset', val);
+      updateDailyCard(); updateDembelTimer();
     }
 
     function applyTestSeason() {
       const val = document.getElementById('testSeasonDate').value;
-      if (val) {
-        manualSeasonDate = val;
-        localStorage.setItem('testSeasonDate', val);
-      } else {
-        manualSeasonDate = null;
-        localStorage.removeItem('testSeasonDate');
-      }
+      if (val) { manualSeasonDate = val; localStorage.setItem('testSeasonDate', val); }
+      else { manualSeasonDate = null; localStorage.removeItem('testSeasonDate'); }
+      checkRainCondition();
     }
 
     function resetDates() {
-      if (confirm("Сбросить все даты?")) {
+      if (confirm("Сбросить все даты и дерево?")) {
         localStorage.removeItem('armyStartDate');
         localStorage.removeItem('armyEndDate');
+        localStorage.removeItem('savedTreeData'); // Удаляем дерево при сбросе
         location.reload();
       }
     }
@@ -1662,94 +1552,50 @@
     }
 
     let textFadeTimer;
+    let isControlClick = false;
 
     function toggleInterface(event) {
-      event.stopPropagation();
+      if (event) { event.stopPropagation(); isControlClick = true; }
       const isHidden = document.body.classList.toggle('ui-hidden');
       document.body.classList.remove('text-faded');
       clearTimeout(textFadeTimer);
 
       if (isHidden) {
-        textFadeTimer = setTimeout(() => {
-          document.body.classList.add('text-faded');
-        }, 20000);
+        isMusicAllowed = true;
+        textFadeTimer = setTimeout(() => { document.body.classList.add('text-faded'); }, 20000);
+        if (!isMusicInitialized) {
+          currentTrackIndex = Math.floor(Math.random() * playlist.length);
+          activePlayer.src = playlist[currentTrackIndex]; activePlayer.volume = 0.5;
+          activePlayer.play().catch(e => console.log("Auto-play blocked:", e));
+          isMusicInitialized = true;
+        } else {
+          if (activePlayer.paused) { activePlayer.play().catch(e => console.log("Play error:", e)); }
+        }
+      } else {
+        isMusicAllowed = false;
+        document.body.classList.remove('text-faded');
+        clearTimeout(textFadeTimer);
+        activePlayer.pause(); nextPlayer.pause();
       }
-
       updateGroundLeavesPosition();
+      setTimeout(() => { isControlClick = false; }, 100);
     }
 
     document.addEventListener('click', function (event) {
+      if (isControlClick) return;
       if (document.body.classList.contains('ui-hidden')) {
         if (!event.target.closest('.modal-overlay')) {
           document.body.classList.remove('ui-hidden');
           document.body.classList.remove('text-faded');
           clearTimeout(textFadeTimer);
+          isMusicAllowed = false;
+          activePlayer.pause(); nextPlayer.pause();
           updateGroundLeavesPosition();
         }
       }
     });
 
     init();
-
-
-    // --- НАСТРОЙКИ МУЗЫКИ ---
-    const bgMusic = document.getElementById('bgMusic');
-    // Укажи здесь названия своих файлов
-    const playlist = ["music1.mp3", "music2.mp3", "music3.mp3"];
-    let currentTrackIndex = 0;
-    let isMusicInitialized = false; // Чтобы знать, включали ли уже
-
-    // Функция переключения трека
-    function playNextTrack() {
-      currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
-      bgMusic.src = playlist[currentTrackIndex];
-      bgMusic.play();
-    }
-
-    // Слушаем окончание трека
-    bgMusic.addEventListener('ended', playNextTrack);
-
-    // --- ОБНОВЛЕННАЯ ФУНКЦИЯ СКРЫТИЯ ИНТЕРФЕЙСА ---
-    function toggleInterface(event) {
-      if (event) event.stopPropagation();
-
-      const isHidden = document.body.classList.toggle('ui-hidden');
-      document.body.classList.remove('text-faded');
-      clearTimeout(textFadeTimer);
-
-      if (isHidden) {
-        // --- ИНТЕРФЕЙС СКРЫТ -> ВКЛЮЧАЕМ МУЗЫКУ ---
-
-        // Запускаем таймер исчезновения текста
-        textFadeTimer = setTimeout(() => {
-          document.body.classList.add('text-faded');
-        }, 20000);
-
-        // Логика музыки
-        if (!isMusicInitialized) {
-          // Если музыка еще ни разу не играла, запускаем первый трек
-          bgMusic.volume = 0.5; // Громкость 50%
-          bgMusic.src = playlist[0];
-          bgMusic.play().catch(e => console.log("Автозапуск заблокирован браузером"));
-          isMusicInitialized = true;
-        } else {
-          // Если уже играли, просто возобновляем (если была на паузе)
-          if (bgMusic.paused) bgMusic.play();
-        }
-
-      } else {
-        // --- ИНТЕРФЕЙС ПОКАЗАН -> ВЫКЛЮЧАЕМ МУЗЫКУ ---
-
-        // Возвращаем текст
-        document.body.classList.remove('text-faded');
-        clearTimeout(textFadeTimer);
-
-        // Ставим музыку на паузу
-        bgMusic.pause();
-      }
-
-      updateGroundLeavesPosition();
-    }
   </script>
 </body>
 
